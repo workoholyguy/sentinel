@@ -10,6 +10,9 @@ import type { Diagnosis } from "./types";
 
 const TICK_MS = 1500;
 const DONE: Incident["status"][] = ["resolved", "ticketed", "needs_human"];
+const QUEUE_RETRY_MS = 10_000;
+// The evidence each Devin request was made with, so a queued one goes out with the fault, not today's healthy network.
+const evidence = new Map<string, Snapshot>();
 const DRY_RUN = process.env.SENTINEL_DRY_RUN !== "0"; // real system changes only when explicitly enabled
 
 function injected(): Snapshot | null {
@@ -115,7 +118,21 @@ async function tick() {
       return;
     }
 
-    // 2b. Devin is writing the fix: follow the session until it opens a PR.
+    // 2b. Queued with no internet: re-send to Devin once a connection is back.
+    if (inc.status === "fixing" && inc.repair?.status === "queued") {
+      if (Date.now() - Date.parse(inc.repair.updatedAt) < QUEUE_RETRY_MS) return;
+      const r = await askDevinForFix(inc, evidence.get(inc.id) ?? s.snapshot);
+      if (!r) {
+        inc.status = "needs_human";
+        log(inc, "info", "Devin couldn't take it — needs a human");
+      } else {
+        inc.repair = r;
+        if (r.status !== "queued") log(inc, "fix", `Back online — sent to Devin: ${r.url}`);
+      }
+      return;
+    }
+
+    // 2c. Devin is writing the fix: follow the session until it opens a PR.
     if (inc.status === "fixing" && inc.repair) {
       const r = await pollDevinFix(inc.repair.id);
       if (r) inc.repair = r;
@@ -176,8 +193,12 @@ async function tick() {
 }
 
 async function handOffToDevin(inc: Incident, snapshot: Snapshot) {
+  evidence.set(inc.id, snapshot);
   const repair = await askDevinForFix(inc, snapshot);
-  if (repair) {
+  if (repair?.status === "queued") {
+    inc.repair = repair;
+    log(inc, "fix", "No internet — queued for Devin with the evidence; it goes out the moment a connection is back");
+  } else if (repair) {
     inc.repair = repair;
     log(inc, "fix", `Devin session started: ${repair.url}`);
   } else {

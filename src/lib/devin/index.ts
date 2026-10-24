@@ -1,6 +1,7 @@
 import { buildRepairBrief, pluginIdFor, type RepairBriefInput } from "./brief";
 import {
   createRepairSession,
+  DevinApiError,
   DEFAULT_DEVIN_API_BASE,
   getRepairSession,
   latestRepairWithPr,
@@ -19,6 +20,21 @@ export interface RequestRepairDeps {
   fetchImpl?: FetchLike;
   now?: () => number;
   log?: (msg: string) => void;
+  /** Throw DevinUnreachableError (instead of returning null) when Devin can't be reached at all. */
+  queueOffline?: boolean;
+}
+
+/** Devin couldn't be reached (no internet, DNS, timeout) — the caller can queue the repair for later. */
+export class DevinUnreachableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DevinUnreachableError";
+  }
+}
+
+/** True when Sentinel can ask Devin for repairs at all (a key, or the mock). */
+export function devinConfigured(env: Record<string, string | undefined> = process.env): boolean {
+  return isMock(env) || Boolean(env.DEVIN_API_KEY?.trim());
 }
 
 /** Mock timeline (ms since creation) for DEVIN_MOCK=1 demos. */
@@ -98,7 +114,9 @@ export async function requestRepair(input: RepairBriefInput, deps: RequestRepair
     const maxAcu = Number(env.DEVIN_MAX_ACU ?? 8) || undefined;
     return await createRepairSession(brief, { ...opts, title, maxAcu, tags: ["sentinel", "repair", String(input.fault)] });
   } catch (err) {
-    log(`Devin repair request failed for fault "${String(input.fault)}": ${err instanceof Error ? err.message : String(err)}`);
+    const msg = err instanceof Error ? err.message : String(err);
+    if (deps.queueOffline && !(err instanceof DevinApiError)) throw new DevinUnreachableError(msg);
+    log(`Devin repair request failed for fault "${String(input.fault)}": ${msg}`);
     return null;
   }
 }

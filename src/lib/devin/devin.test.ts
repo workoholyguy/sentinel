@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Diagnosis, Snapshot } from "../types";
 import { buildRepairBrief, pluginIdFor } from "./brief";
 import { createRepairSession, extractPrUrl, getRepairSession, latestRepairWithPr, mapStatus, type FetchLike } from "./client";
-import { getRepairStatus, MOCK_TIMELINE, peekLastRepair, requestRepair, resetMockRepairs, settleLastRepair } from "./index";
+import { DevinUnreachableError, devinConfigured, getRepairStatus, MOCK_TIMELINE, peekLastRepair, requestRepair, resetMockRepairs, settleLastRepair } from "./index";
 
 const snapshot: Snapshot = {
   at: "2026-10-24T17:00:00.000Z",
@@ -292,5 +292,28 @@ describe("Devin's last repair", () => {
     const { fetchImpl, calls } = fakeFetch([{ body: v3Session() }]);
     await requestRepair(input, { env: { DEVIN_API_KEY: "cog_k", DEVIN_ORG_ID: "org-1", DEVIN_MAX_ACU: "5" }, fetchImpl, log: () => {} });
     expect(JSON.parse(String(calls[0].init?.body)).max_acu_limit).toBe(5);
+  });
+});
+
+describe("offline queueing", () => {
+  const env = { DEVIN_API_KEY: "cog_k", DEVIN_ORG_ID: "org-1" };
+
+  it("throws DevinUnreachableError when Devin can't be reached and the caller queues", async () => {
+    const fetchImpl: FetchLike = async () => {
+      throw new TypeError("fetch failed");
+    };
+    await expect(requestRepair(input, { env, fetchImpl, log: () => {}, queueOffline: true })).rejects.toBeInstanceOf(DevinUnreachableError);
+    expect(await requestRepair(input, { env, fetchImpl, log: () => {} })).toBeNull();
+  });
+
+  it("does not queue an API error (a bad key won't fix itself)", async () => {
+    const { fetchImpl } = fakeFetch([{ status: 401, body: { detail: "bad key" } }]);
+    expect(await requestRepair(input, { env, fetchImpl, log: () => {}, queueOffline: true })).toBeNull();
+  });
+
+  it("knows whether Devin is set up at all", () => {
+    expect(devinConfigured({})).toBe(false);
+    expect(devinConfigured({ DEVIN_MOCK: "1" })).toBe(true);
+    expect(devinConfigured(env)).toBe(true);
   });
 });

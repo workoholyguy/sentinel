@@ -122,7 +122,7 @@ export interface CallState {
 export interface RepairState {
   id: string;
   url: string; // the live Devin session
-  status: "starting" | "working" | "blocked" | "finished" | "failed";
+  status: "queued" | "starting" | "working" | "blocked" | "finished" | "failed"; // queued = no internet yet
   prUrl?: string;
   title?: string;
   updatedAt: string;
