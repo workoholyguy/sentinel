@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "sentinel": "bash scripts/sentinel-app.sh",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
