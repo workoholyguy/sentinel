@@ -185,7 +185,16 @@ async function tick() {
         }
         return;
       }
-      inc.call = await startProviderCall(inc, demoProfile);
+      try {
+        inc.call = await startProviderCall(inc, demoProfile);
+      } catch (e) {
+        // No way out yet (the ISP is down): keep retrying every tick; it goes out the moment there's a path.
+        if (!inc.timeline.some((ev) => ev.text.startsWith("No way out"))) {
+          log(inc, "info", `No way out to call ${demoProfile.providerName} yet — calling the moment there's a connection (e.g. your phone's hotspot)`);
+        }
+        console.warn("[sentinel] provider call not placed yet:", e instanceof Error ? e.message : e);
+        return;
+      }
       inc.status = "calling";
       log(inc, "call", `Calling ${demoProfile.providerName} support`);
       return;
@@ -198,7 +207,7 @@ async function tick() {
         const o = inc.call.outcome;
         log(inc, "call", o?.ticketNumber ? `Ticket ${o.ticketNumber}${o.creditUsd ? ` · $${o.creditUsd.toFixed(2)} credit` : ""}${o.technicianWindow ? ` · tech ${o.technicianWindow}` : ""}` : "Call ended");
         if (o?.cause) log(inc, "info", `Cause per ${demoProfile.providerName}: ${o.cause}`);
-        const debrief = inc.call.status === "ended" ? await startCustomerUpdate(inc, demoProfile).catch((e) => {
+        const debrief = inc.call.status === "ended" && o?.summary ? await startCustomerUpdate(inc, demoProfile).catch((e) => {
           console.error("[sentinel] customer update call failed", e);
           return null;
         }) : null;
