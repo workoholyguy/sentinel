@@ -81,25 +81,11 @@ export function DiagnosisCard({ diagnosis }: { diagnosis?: Diagnosis }) {
           <span className="font-mono text-sm tabular text-accent">{pct}%</span>
         </div>
       </div>
-      <h3 className="mt-3 text-[28px] font-semibold leading-tight tracking-tight">{diagnosis.summary}</h3>
-      <ul className="mt-4 space-y-2">
-        {diagnosis.evidence.map((e, i) => (
-          <motion.li
-            key={e}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 + i * 0.08 }}
-            className="flex gap-3 text-[15px] leading-snug text-white/65"
-          >
-            <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-accent" />
-            {e}
-          </motion.li>
-        ))}
-      </ul>
-      <div className="mt-auto pt-5">
-        <div className="rounded-2xl border border-accent/20 bg-accent/[0.06] p-5">
+      <div className="scroll-thin mt-3 min-h-0 flex-1 overflow-y-auto pr-1 [overflow-anchor:none]">
+        <h3 className="text-[24px] font-semibold leading-tight tracking-tight">{diagnosis.summary}</h3>
+        <div className="mt-4 rounded-2xl border border-accent/20 bg-accent/[0.06] p-5">
           {diagnosis.explanation ? (
-            <p className="text-[17px] leading-relaxed text-white/85" data-testid="explanation">
+            <p className="text-[16px] leading-relaxed text-white/85" data-testid="explanation">
               {diagnosis.explanation}
             </p>
           ) : (
@@ -116,6 +102,20 @@ export function DiagnosisCard({ diagnosis }: { diagnosis?: Diagnosis }) {
             <span className="font-mono text-[11px] text-white/35">{BLAME[diagnosis.blame]}</span>
           </div>
         </div>
+        <ul className="mt-4 space-y-2">
+          {diagnosis.evidence.map((e, i) => (
+            <motion.li
+              key={e}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 + i * 0.08 }}
+              className="flex gap-3 text-[15px] leading-snug text-white/65"
+            >
+              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-accent" />
+              {e}
+            </motion.li>
+          ))}
+        </ul>
       </div>
     </motion.div>
   );
@@ -128,7 +128,7 @@ const BLAME: Record<Diagnosis["blame"], string> = {
   unknown: "Fault: unclear",
 };
 
-export function FixesList({ fixes, status }: { fixes: FixResult[]; status: IncidentStatus }) {
+export function FixesList({ fixes, status, devin = false }: { fixes: FixResult[]; status: IncidentStatus; devin?: boolean }) {
   return (
     <div className="panel p-6" data-testid="fixes">
       <div className="label">Fixes tried</div>
@@ -159,7 +159,10 @@ export function FixesList({ fixes, status }: { fixes: FixResult[]; status: Incid
             </motion.li>
           ))}
         </AnimatePresence>
-        {status === "fixing" && (
+        {devin && fixes.length === 0 && (
+          <li className="text-[15px] leading-snug text-white/55">Nothing in the playbook fits this fault — handed to Devin.</li>
+        )}
+        {status === "fixing" && !devin && (
           <li className="flex items-center gap-3 text-[15px] text-white/45">
             <span className="grid h-6 w-6 place-items-center">
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
@@ -167,7 +170,7 @@ export function FixesList({ fixes, status }: { fixes: FixResult[]; status: Incid
             Trying next fix…
           </li>
         )}
-        {fixes.length === 0 && status !== "fixing" && <li className="text-[15px] text-white/35">None yet</li>}
+        {fixes.length === 0 && status !== "fixing" && !devin && <li className="text-[15px] text-white/35">None yet</li>}
       </ul>
     </div>
   );

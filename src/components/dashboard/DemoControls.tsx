@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 const ACTIONS = [
-  { label: "Break DNS", path: "/api/demo/break-dns" },
   { label: "Simulate ISP outage", path: "/api/demo/isp-outage" },
+  { label: "Unknown fault", path: "/api/demo/unknown-fault" },
   { label: "Restore", path: "/api/demo/restore" },
 ] as const;
 
@@ -19,7 +19,7 @@ export async function triggerDemo(path: string): Promise<void> {
 export function DemoControls() {
   const [busy, setBusy] = useState<string | null>(null);
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex gap-1.5 rounded-full border border-white/[0.06] bg-ink-900/80 p-1.5 opacity-30 backdrop-blur transition-opacity duration-300 hover:opacity-100 focus-within:opacity-100">
+    <div className="fixed left-1/2 top-8 z-50 flex -translate-x-1/2 gap-1.5 rounded-full border border-white/[0.06] bg-ink-900/80 p-1.5 opacity-30 backdrop-blur transition-opacity duration-300 hover:opacity-100 focus-within:opacity-100">
       {ACTIONS.map((a) => (
         <button
           key={a.path}

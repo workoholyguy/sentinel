@@ -105,7 +105,7 @@ function Link({
   return (
     <div className="relative mx-1 flex-1" style={{ height: size }} data-testid={`link-${node}`} data-failing={isFailing || undefined}>
       <div
-        className={`absolute inset-x-0 top-[calc(50%-30px)] text-center font-mono text-[13px] tabular ${isFailing ? "alarm" : ""}`}
+        className={`absolute inset-x-0 bottom-[calc(50%+12px)] text-center font-mono text-[13px] leading-tight tabular ${isFailing ? "alarm" : ""}`}
         style={{ color: isFailing ? HEALTH_HEX.down : health === "ok" ? "rgb(255 255 255 / 0.7)" : color }}
       >
         {afterFailure ? "—" : linkLabel(probe)}
