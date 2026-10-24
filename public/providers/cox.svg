@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Iris_5" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="tiny" version="1.2" viewBox="0 0 500 500" width="256" height="256">
+  <!-- Generator: Adobe Illustrator 29.0.0, SVG Export Plug-In . SVG Version: 2.1.0 Build 186)  -->
+  <defs>
+    <linearGradient id="New_Gradient_09-13" data-name="New Gradient_09-13" x1="73.2233" y1="73.2233" x2="426.7767" y2="426.7767" gradientUnits="userSpaceOnUse">
+      <stop offset=".12" stop-color="#00aaf4"/>
+      <stop offset=".88" stop-color="#00d258"/>
+    </linearGradient>
+  </defs>
+  <path d="M250,500C111.92881,500,0,388.07119,0,250,0,111.92881,111.92881,0,250,0c138.07119,0,250,111.92881,250,250,0,138.07119-111.92881,250-250,250ZM307.1704,250c0-31.57434-25.59606-57.1704-57.1704-57.1704-31.57434,0-57.1704,25.59606-57.1704,57.1704,0,31.57434,25.59606,57.1704,57.1704,57.1704,31.57434,0,57.1704-25.59606,57.1704-57.1704Z" fill="url(#New_Gradient_09-13)"/>
+</svg>

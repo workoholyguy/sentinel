@@ -194,3 +194,17 @@ html {
 .typing-dot {
   animation: typing-dot 1.1s ease-in-out infinite;
 }
+
+/* provider logos drifting past; hover holds them still */
+@keyframes marquee {
+  to { transform: translateX(-100%); }
+}
+.marquee-track {
+  animation: marquee 48s linear infinite;
+}
+.marquee-reverse {
+  animation-direction: reverse;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}

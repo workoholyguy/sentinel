@@ -2,7 +2,10 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { buildDottedMap } from "../ui/dotted-map";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { Landing } from "./Landing";
+import { PROVIDERS } from "./Providers";
 
 beforeAll(() => {
   // jsdom has no layout observers; the page must still render without them
@@ -36,6 +39,14 @@ describe("Landing", () => {
     expect(screen.getByTestId("cost-Idle payroll").textContent).toBe("$49,500");
     fireEvent.click(screen.getByRole("radio", { name: "Per hour down" }));
     expect(screen.getByTestId("cost-Idle payroll").textContent).toBe("$1,375");
+  });
+
+  it("shows a real logo for every provider", () => {
+    render(<Landing />);
+    for (const p of PROVIDERS) {
+      expect(existsSync(join(process.cwd(), "public/providers", p.logo))).toBe(true);
+      expect(screen.getAllByText(p.name).length).toBeGreaterThan(0);
+    }
   });
 
   it("links to the live dashboard", () => {
