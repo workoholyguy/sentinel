@@ -141,6 +141,7 @@ export function callElapsed(call: CallState, now: number): number {
 }
 
 const FAULT_TITLE: Record<FaultCode, string> = {
+  IPV6_BLACKHOLE: "IPv6 traffic is being dropped",
   WIFI_DISCONNECTED: "Wi-Fi is disconnected",
   DHCP_NO_LEASE: "No IP address from the router",
   GATEWAY_UNREACHABLE: "Router is unreachable",
