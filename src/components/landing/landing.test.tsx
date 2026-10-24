@@ -35,6 +35,15 @@ describe("Landing", () => {
     expect(screen.getByText("Outage detected")).toBeTruthy(); // the hero map's incident card
   });
 
+  it("plays the demo film silently, with one click to watch it with sound", () => {
+    render(<Landing />);
+    const video = screen.getByLabelText("Uplink product demo") as HTMLVideoElement;
+    expect(video.muted).toBe(true);
+    expect(video.loop).toBe(true);
+    expect(video.querySelector("source")?.getAttribute("src")).toBe("/demo/uplink-demo.mp4");
+    expect(screen.getByRole("button", { name: "Watch the demo full screen, with sound" })).toBeTruthy();
+  });
+
   it("recomputes downtime cost per period", () => {
     render(<Landing />);
     expect(screen.getByTestId("cost-Idle payroll").textContent).toBe("$49,500");

@@ -1,5 +1,6 @@
 import { buildDottedMap } from "../ui/dotted-map";
 import { Cost } from "./Cost";
+import { DemoVideo } from "./DemoVideo";
 import { Features } from "./Features";
 import { Footer } from "./Footer";
 import { Hero } from "./Hero";
@@ -29,6 +30,7 @@ export function Landing() {
       <main className="relative z-10 rounded-b-[28px] bg-[#fafafa] shadow-[0_30px_60px_-30px_rgb(0_0_0/0.18)] sm:rounded-b-[40px]">
         <Hero map={US} />
         <Providers />
+        <DemoVideo />
         <Steps />
         <Features />
         <Cost />
