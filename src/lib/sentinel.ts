@@ -3,6 +3,7 @@
 import type { Incident, Snapshot } from "./types";
 import { state, now, log } from "./store";
 import { demoProfile } from "./profile";
+import { callDelaySeconds } from "./escalation";
 import { explainLocally } from "./llm";
 import { ispOutageSnapshot } from "./mock";
 import { askDevinForFix, diagnoseSnapshot as diagnoseReal, execContext, hasFixFor, pollDevinFix, pollProviderCall, runFixesFor, sampleNetwork, startProviderCall } from "./adapters";
@@ -170,8 +171,20 @@ async function tick() {
       return;
     }
 
-    // 3. Provider's fault: place the call.
+    // 3. Provider's fault: place the call — once the outage has outlasted a blip.
     if (inc.status === "escalating") {
+      const wait = callDelaySeconds(inc.simulated);
+      const lasted = (Date.now() - Date.parse(inc.startedAt)) / 1000;
+      if (lasted < wait) {
+        if (!diagnoseSnapshot(s.snapshot)) {
+          inc.status = "resolved";
+          log(inc, "info", `Cleared on its own — no need to call ${demoProfile.providerName}`);
+        } else if (!inc.timeline.some((e) => e.text.startsWith("Waiting"))) {
+          const span = wait >= 120 ? `${Math.round(wait / 60)} min` : `${wait} s`;
+          log(inc, "info", `Waiting ${span} to rule out a blip before calling ${demoProfile.providerName}`);
+        }
+        return;
+      }
       inc.call = await startProviderCall(inc, demoProfile);
       inc.status = "calling";
       log(inc, "call", `Calling ${demoProfile.providerName} support`);
@@ -207,14 +220,19 @@ async function handOffToDevin(inc: Incident, snapshot: Snapshot) {
   }
 }
 
+// The loop lives on globalThis so one process runs one loop. Keyed by this module's `tick`, so a
+// hot reload swaps in the new code instead of leaving the old loop running stale code.
+const loop = globalThis as unknown as { __sentinelTick?: unknown; __sentinelTimer?: ReturnType<typeof setInterval> };
+
 export function ensureRunning() {
-  const s = state();
-  if (s.started) return;
-  s.started = true;
+  if (loop.__sentinelTick === tick) return;
+  if (loop.__sentinelTimer) clearInterval(loop.__sentinelTimer);
+  loop.__sentinelTick = tick;
+  state().started = true;
   // A slow sample (traceroute can take ~4 s) must not overlap the next one,
   // but a tick stuck for 15 s+ must not stop monitoring either.
   let tickStarted = 0;
-  setInterval(() => {
+  loop.__sentinelTimer = setInterval(() => {
     if (tickStarted && Date.now() - tickStarted < 15_000) return;
     const started = (tickStarted = Date.now());
     tick()
