@@ -133,3 +133,29 @@ export async function adoptCloudCall(inc: Incident): Promise<boolean> {
   log(inc, "call", `The cloud watchdog called ${demoProfile.providerName} while the house was offline — following that call`);
   return true;
 }
+
+/** Stop the cloud from calling (we're shutting down on purpose, not going dark). */
+export async function disarm(env: Env = process.env): Promise<boolean> {
+  if (!watchdogEnabled(env)) return false;
+  try {
+    const res = await fetch(`${env.WATCHDOG_URL!.replace(/\/$/, "")}/disarm`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${env.WATCHDOG_TOKEN}` },
+      signal: AbortSignal.timeout(2000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// A clean stop (Ctrl-C, quitting the app, a server restart) must not look like the house going dark.
+const flag = globalThis as unknown as { __uplinkDisarmHooked?: boolean };
+if (!flag.__uplinkDisarmHooked && typeof process !== "undefined") {
+  flag.__uplinkDisarmHooked = true;
+  for (const sig of ["SIGINT", "SIGTERM"] as const) {
+    process.once(sig, () => {
+      void disarm().finally(() => process.exit(0));
+    });
+  }
+}
