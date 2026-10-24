@@ -6,8 +6,8 @@ import { Card } from "../ui";
 import { useLoop } from "../useLoop";
 
 const SITES = [
-  { name: "San Francisco HQ", ms: 12, uptime: "99.99%" },
-  { name: "New York Office", ms: 24, uptime: "99.94%", flaky: true },
+  { name: "San Francisco", ms: 12, uptime: "99.99%" },
+  { name: "New York", ms: 24, uptime: "99.94%", flaky: true },
   { name: "London", ms: 18, uptime: "99.98%" },
   { name: "Singapore", ms: 36, uptime: "99.97%" },
 ];
@@ -58,8 +58,8 @@ export function StatusCard() {
             });
             return (
               <li key={s.name} className="grid grid-cols-[1fr_auto_56px] items-center gap-4 px-5 py-4 sm:grid-cols-[1fr_104px_64px_64px] sm:px-6">
-                <span className="flex items-center gap-3 text-[14px] text-neutral-800">
-                  <OfficeGlyph className="h-[18px] w-[18px] text-neutral-400" />
+                <span className="flex min-w-0 items-center gap-3 whitespace-nowrap text-[14px] text-neutral-800">
+                  <OfficeGlyph className="h-[18px] w-[18px] shrink-0 text-neutral-400" />
                   {s.name}
                 </span>
                 <span className={`flex items-center gap-2 text-[13px] ${bad ? "text-orange-600" : "text-emerald-600"}`}>

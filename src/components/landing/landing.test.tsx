@@ -25,12 +25,13 @@ beforeAll(() => {
 afterEach(cleanup);
 
 describe("Landing", () => {
-  it("leads with the promise, then the five steps", () => {
+  it("leads with the promise, then the five steps and the call to action", () => {
     render(<Landing />);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Internet down?Already handled.");
-    for (const title of [/^Always watching\s*your network\.$/, /^Finds the problem\.\s*And who's responsible\.$/, /^Calls your ISP\.\s*So you don't have to\.$/, /^New fault\?\s*Devin writes the fix\.$/]) {
-      expect(screen.getByRole("heading", { level: 2, name: title })).toBeTruthy();
+    for (const title of ["Always watching.", "Finds who's at fault.", "Calls your ISP.", "New fault? Devin writes the fix."]) {
+      expect(screen.getByRole("heading", { level: 3, name: title })).toBeTruthy();
     }
+    expect(screen.getByRole("heading", { level: 2, name: /^Fixed at any hour\.\s*At every location\.$/ })).toBeTruthy(); // the footer's call to action
     expect(screen.getByText("Outage detected")).toBeTruthy(); // the hero map's incident card
   });
 

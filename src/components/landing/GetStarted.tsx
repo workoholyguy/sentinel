@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
-import { Eyebrow, Section } from "./ui";
+import { Eyebrow } from "./ui";
 
 function DemoForm() {
   const [email, setEmail] = useState("");
@@ -44,24 +44,23 @@ function DemoForm() {
   );
 }
 
-export function GetStarted() {
+/** The demo call-to-action; it sits in the sky of the mountain footer. */
+export function GetStartedCta() {
   return (
-    <Section id="book" className="pb-28 pt-8 sm:pb-36">
-      <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-        <Eyebrow dot>Get started</Eyebrow>
-        <h2 className="mt-5 text-[clamp(32px,4.2vw,52px)] font-semibold leading-[1.06] tracking-[-0.04em] text-neutral-950">
-          Fixed at any hour.
-          <br />
-          <span className="text-neutral-400">At every location.</span>
-        </h2>
-        <p className="mt-4 max-w-[460px] text-[16px] leading-[1.6] text-neutral-500">Put Uplink on every site in minutes. Available on Apple, Windows and the web.</p>
-        <div className="mt-7 flex w-full justify-center">
-          <DemoForm />
-        </div>
-        <Link href="/dashboard" className="mt-3 inline-flex items-center gap-1 text-[14px] text-neutral-500 transition hover:text-neutral-950">
-          Or open the live dashboard <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+    <div className="mx-auto flex max-w-2xl flex-col items-center px-5 text-center">
+      <Eyebrow dot>Get started</Eyebrow>
+      <h2 className="mt-4 text-[clamp(30px,4vw,50px)] font-semibold leading-[1.06] tracking-[-0.04em] text-[#14213a]">
+        Fixed at any hour.
+        <br />
+        <span className="text-[#7b8aa3]">At every location.</span>
+      </h2>
+      <p className="mt-3 max-w-[460px] text-[15.5px] leading-[1.6] text-[#5b6b82]">Put Uplink on every site in minutes. Available on Apple, Windows and the web.</p>
+      <div className="mt-6 flex w-full justify-center">
+        <DemoForm />
       </div>
-    </Section>
+      <Link href="/dashboard" className="mt-3 inline-flex items-center gap-1 text-[14px] text-[#5b6b82] transition hover:text-[#14213a]">
+        Or open the live dashboard <ArrowRight className="h-3.5 w-3.5" />
+      </Link>
+    </div>
   );
 }

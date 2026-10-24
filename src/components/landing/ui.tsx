@@ -18,32 +18,6 @@ export function Eyebrow({ children, dot = false, className = "" }: { children: R
   );
 }
 
-/** "01  MONITOR" */
-export function StepLabel({ n, children }: { n: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-4 text-[12px] font-medium uppercase tracking-[0.14em]">
-      <span className="font-mono text-neutral-900">{n}</span>
-      <span className="text-neutral-500">{children}</span>
-    </div>
-  );
-}
-
-/** A quiet list marker: a small rounded square with a dot. */
-export function Bullets({ items }: { items: string[] }) {
-  return (
-    <ul className="space-y-3.5">
-      {items.map((item) => (
-        <li key={item} className="flex items-center gap-3.5 text-[15.5px] text-neutral-600">
-          <span className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] border border-neutral-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-neutral-400" />
-          </span>
-          {item}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 type Tone = "dark" | "light";
 const TONES: Record<Tone, string> = {
   dark: "bg-neutral-950 text-white hover:bg-neutral-800",
