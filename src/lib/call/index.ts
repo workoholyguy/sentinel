@@ -7,10 +7,12 @@ type Env = Record<string, string | undefined>;
 
 const mockCalls = new Map<string, MockCall>();
 
+// Live calls need Vapi AND a real number to ring; without one, keep the scripted mock.
 function vapiConfig(env: Env) {
-  const apiKey = env.VAPI_API_KEY;
-  const phoneNumberId = env.VAPI_PHONE_NUMBER_ID;
-  return apiKey && phoneNumberId ? { apiKey, phoneNumberId } : null;
+  const apiKey = env.VAPI_API_KEY?.trim();
+  const phoneNumberId = env.VAPI_PHONE_NUMBER_ID?.trim();
+  const target = env.SENTINEL_SUPPORT_NUMBER?.trim() ?? "";
+  return apiKey && phoneNumberId && /^\+\d{8,15}$/.test(target) ? { apiKey, phoneNumberId } : null;
 }
 
 export function isLiveCalling(env: Env = process.env): boolean {

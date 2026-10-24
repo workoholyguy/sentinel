@@ -42,7 +42,9 @@ describe("facade", () => {
   it("uses the mock without Vapi credentials", async () => {
     expect(isLiveCalling({})).toBe(false);
     expect(isLiveCalling({ VAPI_API_KEY: "k" })).toBe(false);
-    expect(isLiveCalling({ VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p" })).toBe(true);
+    expect(isLiveCalling({ VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p" })).toBe(false); // nobody to ring yet
+    expect(isLiveCalling({ VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", SENTINEL_SUPPORT_NUMBER: "" })).toBe(false);
+    expect(isLiveCalling({ VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", SENTINEL_SUPPORT_NUMBER: "+14045550123" })).toBe(true);
     const started = await startCall(callingIncident, demoProfile, {});
     expect(started.id).toMatch(/^mock_call_/);
     expect(started.status).toBe("ringing");
