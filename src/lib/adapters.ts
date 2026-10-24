@@ -6,7 +6,7 @@ import { diagnose } from "./diagnose";
 import { fixesFor, loadExtraPlugins, registry, runFixes } from "./fixes";
 import { createExecContext } from "./fixes/exec";
 import { getCall, startCall } from "./call";
-import { getRepairStatus, peekLastRepair, requestRepair } from "./devin";
+import { DevinUnreachableError, devinConfigured, getRepairStatus, peekLastRepair, requestRepair } from "./devin";
 
 const platform: "darwin" | "linux" = process.platform === "darwin" ? "darwin" : "linux";
 
@@ -58,11 +58,23 @@ export async function pollProviderCall(id: string): Promise<CallState> {
 // ---- Slice E: Devin at runtime ----------------------------------------------------------
 const REPO = process.env.SENTINEL_REPO ?? "https://github.com/workoholyguy/sentinel";
 
+/**
+ * Asks Devin to write a repair. With no internet the request is queued (status "queued")
+ * and the orchestrator re-sends it once a connection is back. Null = Devin not set up.
+ */
 export async function askDevinForFix(incident: Incident, snapshot: Snapshot): Promise<RepairState | null> {
-  if (!incident.diagnosis) return null;
+  if (!incident.diagnosis || !devinConfigured()) return null;
   const failedFixes = incident.fixes.filter((f) => !f.ok);
-  const session = await requestRepair({ fault: incident.diagnosis.fault, diagnosis: incident.diagnosis, snapshot, platform, repo: REPO, failedFixes });
-  return session ? { ...session } : null;
+  try {
+    const session = await requestRepair(
+      { fault: incident.diagnosis.fault, diagnosis: incident.diagnosis, snapshot, platform, repo: REPO, failedFixes },
+      { queueOffline: true },
+    );
+    return session ? { ...session } : null;
+  } catch (err) {
+    if (!(err instanceof DevinUnreachableError)) throw err;
+    return { id: `queued-${incident.id}`, url: "", status: "queued", updatedAt: new Date().toISOString() };
+  }
 }
 
 export async function pollDevinFix(id: string): Promise<RepairState | null> {

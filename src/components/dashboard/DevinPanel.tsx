@@ -8,6 +8,13 @@ import { formatDuration } from "./format";
 type StepState = "done" | "current" | "todo" | "failed";
 
 function repairSteps(r: RepairState): { label: string; detail: string; state: StepState }[] {
+  if (r.status === "queued") {
+    return [
+      { label: "Queued offline", detail: "Saved with the evidence — no internet right now", state: "current" },
+      { label: "Writing the repair", detail: "Starts the moment a connection is back", state: "todo" },
+      { label: "Pull request opened", detail: "Sentinel loads it on the next fault", state: "todo" },
+    ];
+  }
   const failed = r.status === "failed" || r.status === "blocked";
   const writing: StepState = r.status === "finished" ? "done" : failed ? "failed" : r.status === "working" ? "current" : "todo";
   return [
@@ -43,7 +50,9 @@ export function DevinPanel({
   const previous = !done && !failed && lastRepair?.prUrl && lastRepair.id !== repair.id ? lastRepair : null;
   const heading = done
     ? "Devin wrote the fix"
-    : failed
+    : repair.status === "queued"
+      ? "No internet — queued for Devin"
+      : failed
       ? "Devin couldn't write a fix — needs a human"
       : hadPlaybook
         ? "The playbook didn't fix it — Devin is writing a better repair"
@@ -90,14 +99,16 @@ export function DevinPanel({
       </ol>
 
       <div className="mt-6 flex flex-wrap gap-2.5">
-        <a
-          href={repair.url}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3.5 py-1.5 font-mono text-[12px] text-white/70 transition hover:border-accent/50 hover:text-white"
-        >
-          <ExternalLink className="h-3.5 w-3.5" /> Watch the session
-        </a>
+        {repair.url && (
+          <a
+            href={repair.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3.5 py-1.5 font-mono text-[12px] text-white/70 transition hover:border-accent/50 hover:text-white"
+          >
+            <ExternalLink className="h-3.5 w-3.5" /> Watch the session
+          </a>
+        )}
         {repair.prUrl && (
           <motion.a
             initial={{ opacity: 0, scale: 0.95 }}
