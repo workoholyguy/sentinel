@@ -4,4 +4,6 @@ import { defineConfig } from "vitest/config";
 // whose string-plugin form Vite rejects ("Invalid PostCSS Plugin found at: plugins[0]").
 export default defineConfig({
   css: { postcss: {} },
+  resolve: { alias: { "@": new URL("./src", import.meta.url).pathname } },
+  esbuild: { jsx: "automatic" },
 });
