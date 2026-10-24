@@ -128,7 +128,7 @@ function HealthyView({ data, poll, now }: { data: StatusResponse; poll: Poll; no
           </div>
           <h1 className="mt-3 text-[88px] font-semibold leading-[0.95] tracking-[-0.045em]">All systems normal</h1>
           <p className="mt-4 text-xl text-white/45">
-            {healthy} of {nodes.length} hops healthy · checked every second · diagnosed on-device
+            {healthy} of {nodes.length} hops healthy · checked every 1.5 s · diagnosed on-device
           </p>
         </div>
         <div className="pb-3 text-right">
