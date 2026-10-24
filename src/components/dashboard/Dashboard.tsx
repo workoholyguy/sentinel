@@ -10,6 +10,7 @@ import { DiagnosisCard, FixesList, Stepper } from "./Incident";
 import { NetworkMap } from "./NetworkMap";
 import { HistoryList, UptimeStats } from "./Sidebar";
 import { ActivityPanel, CallCountdown, ModelPill } from "./Console";
+import { OutageButton } from "./OutageButton";
 import { formatClock, formatDuration, incidentEnd, incidentTitle, isEscalated, isTerminal, probeFor } from "./format";
 import { type Poll, useNow, useStatusPoll } from "./hooks";
 
@@ -46,6 +47,7 @@ function Header({ data, connected, now }: { data: StatusResponse | null; connect
         </div>
       </div>
       <div className="flex items-center gap-6">
+        {data && <OutageButton active={Boolean(data.outage)} />}
         {data?.incident?.simulated && <SimulatedTag />}
         <div className="flex items-center gap-2 font-mono text-[12px]">
           <span className={`h-2 w-2 rounded-full ${connected ? "bg-ok" : "bg-warn"}`} />

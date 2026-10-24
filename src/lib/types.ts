@@ -166,6 +166,7 @@ export interface StatusResponse {
   lastRepair?: RepairState | null; // newest Devin repair that opened a PR (from the Devin API)
   llm?: LocalModelState;
   terminal?: TerminalLine[];
+  outage?: boolean; // the demo's real outage switch is on
 }
 
 /** The on-device model only runs during an incident: asleep → waking → troubleshooting → done → asleep. */

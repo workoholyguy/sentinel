@@ -4,6 +4,7 @@ import { state } from "@/lib/store";
 import { ensureRunning } from "@/lib/sentinel";
 import { demoProfile } from "@/lib/profile";
 import { lastDevinRepair } from "@/lib/adapters";
+import { outageActive } from "@/lib/outage";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export async function GET() {
     lastRepair,
     llm: s.llm,
     terminal: (s.terminal ?? []).slice(-120),
+    outage: outageActive(),
   };
   return NextResponse.json(body);
 }

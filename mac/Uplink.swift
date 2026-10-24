@@ -110,6 +110,9 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let demoItem = NSMenuItem()
         main.addItem(demoItem)
         let demo = NSMenu(title: "Demo")
+        add(demo, "Imitate outage (real)", #selector(outageOn), "3")
+        add(demo, "End outage", #selector(outageOff), "4")
+        demo.addItem(.separator())
         add(demo, "Simulate ISP outage", #selector(simulateOutage), "1")
         add(demo, "Unknown fault (Devin)", #selector(unknownFault), "2")
         add(demo, "Restore", #selector(restore), "0")
@@ -170,6 +173,16 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate {
         URLSession.shared.dataTask(with: r).resume()
     }
 
+    func outage(_ on: Bool) {
+        var r = URLRequest(url: base.appendingPathComponent("api/demo/outage"))
+        r.httpMethod = "POST"
+        r.setValue("application/json", forHTTPHeaderField: "content-type")
+        r.httpBody = on ? Data(#"{"on":true}"#.utf8) : Data(#"{"on":false}"#.utf8)
+        URLSession.shared.dataTask(with: r).resume()
+    }
+
+    @objc func outageOn() { outage(true) }
+    @objc func outageOff() { outage(false) }
     @objc func openWindow() { NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil) }
     @objc func reload() { web.reload() }
     @objc func simulateOutage() { post("api/demo/isp-outage") }
