@@ -14,10 +14,12 @@ const ARCS = [
   { start: "ny", end: "sao" },
   { start: "lon", end: "sin" },
   { start: "sin", end: "tok" },
+  { start: "sin", end: "syd" },
 ];
 
 const LINKS = [
   { href: "#how", label: "How it works" },
+  { href: "#why", label: "Why Uplink" },
   { href: "#cost", label: "Downtime cost" },
   { href: "/dashboard", label: "Live dashboard" },
 ];
@@ -60,55 +62,82 @@ function DemoForm() {
   );
 }
 
+const MIN_MAP_WIDTH = 480; // smaller than this and the labels crowd; scroll instead
+const NAV_HEIGHT = 72; // the fixed header sits over the top of the screen
+
 /**
- * The page lifts off this footer as you reach the end. That only works when the footer fits the
- * screen, so on short viewports (or tall footers, e.g. phones) it falls back to a normal footer.
+ * The page lifts off this footer as you reach the end, which only works if the footer fits the screen.
+ * So the map takes whatever height is left after the text and links, on any viewport. On screens too
+ * short for a readable map, the map keeps its full size and the footer simply scrolls.
  */
-function useFitsViewport() {
+function useFooterFit(aspect: number) {
   const ref = useRef<HTMLElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [mapWidth, setMapWidth] = useState<number | null>(null);
   const [fits, setFits] = useState(false);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const check = () => setFits(el.offsetHeight <= window.innerHeight);
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    window.addEventListener("resize", check);
+    const footer = ref.current;
+    const mapEl = mapRef.current;
+    if (!footer || !mapEl) return;
+    const measure = () => {
+      const rest = footer.offsetHeight - mapEl.offsetHeight;
+      const full = mapEl.parentElement?.clientWidth ?? mapEl.offsetWidth;
+      const room = window.innerHeight - NAV_HEIGHT;
+      const width = Math.floor(Math.min(full, (room - rest) * aspect));
+      const fit = width >= Math.min(MIN_MAP_WIDTH, full * 0.85);
+      setMapWidth(fit ? width : null);
+      setFits(fit);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(footer);
+    window.addEventListener("resize", measure);
     return () => {
       ro.disconnect();
-      window.removeEventListener("resize", check);
+      window.removeEventListener("resize", measure);
     };
-  }, []);
-  return { ref, fits };
+  }, [aspect]);
+  return { ref, mapRef, mapWidth, fits };
 }
 
 export function Footer({ map }: { map: MapData }) {
-  const { ref, fits } = useFitsViewport();
+  const { ref, mapRef, mapWidth, fits } = useFooterFit(map.width / map.height);
+  const [roomy, setRoomy] = useState(true); // city labels collide on phone-sized maps
+  useEffect(() => {
+    const el = mapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setRoomy(e.contentRect.width >= 420));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [mapRef]);
   return (
     <footer id="book" ref={ref} className={`${fits ? "sticky bottom-0" : "relative"} z-0 scroll-mt-20 bg-white`}>
-      <div className="mx-auto max-w-[1160px] px-5 pb-8 pt-20 sm:px-8 sm:pt-24">
-        <div className="grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr]">
-          <div>
-            <Eyebrow dot>Get started</Eyebrow>
-            <h2 className="mt-5 text-[clamp(34px,4vw,50px)] font-semibold leading-[1.06] tracking-[-0.04em] text-neutral-950">
-              Fixed at any hour.
-              <br />
-              <span className="text-neutral-400">At every location.</span>
-            </h2>
-            <p className="mt-5 max-w-[400px] text-[16.5px] leading-[1.65] text-neutral-500">
-              Put Uplink on every site in minutes. Available on Apple, Windows and the web.
-            </p>
-            <div className="mt-8">
-              <DemoForm />
-            </div>
-            <Link href="/dashboard" className="mt-4 inline-flex items-center gap-1 text-[14px] text-neutral-500 transition hover:text-neutral-950">
-              Or open the live dashboard <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+      <div className="mx-auto max-w-[1160px] px-5 pb-6 pt-16 sm:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <Eyebrow dot className="justify-center">
+            Get started
+          </Eyebrow>
+          <h2 className="mt-4 text-[clamp(32px,4.2vw,52px)] font-semibold leading-[1.06] tracking-[-0.04em] text-neutral-950">
+            Fixed at any hour.
+            <br />
+            <span className="text-neutral-400">At every location.</span>
+          </h2>
+          <p className="mx-auto mt-4 max-w-[460px] text-[16px] leading-[1.6] text-neutral-500">
+            Put Uplink on every site in minutes. Available on Apple, Windows and the web.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <DemoForm />
           </div>
-          <WorldMap map={map} dots={ARCS} lineColor="#3b82f6" dotColor="#d4d4d4" showLabels animationDuration={1.6} />
+          <Link href="/dashboard" className="mt-3 inline-flex items-center gap-1 text-[14px] text-neutral-500 transition hover:text-neutral-950">
+            Or open the live dashboard <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
 
-        <div className="mt-16 flex flex-col gap-5 border-t border-neutral-200 pt-6 text-[13px] text-neutral-400 md:flex-row md:items-center md:justify-between">
+        <div ref={mapRef} className="mx-auto mt-6 max-w-full" style={{ width: mapWidth ?? "100%" }}>
+          <WorldMap map={map} dots={ARCS} lineColor="#3b82f6" dotColor="#d4d4d4" showLabels={roomy} loop animationDuration={1.8} />
+        </div>
+
+        <div className="mt-6 flex flex-col gap-5 border-t border-neutral-200 pt-6 text-[13px] text-neutral-400 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2 text-neutral-900">
             <LogoMark className="h-5 w-5" />
             <span className="text-[15px] font-semibold tracking-[-0.02em]">Uplink</span>

@@ -1,5 +1,6 @@
 import { buildDottedMap } from "../ui/dotted-map";
 import { Cost } from "./Cost";
+import { Features } from "./Features";
 import { Footer } from "./Footer";
 import { Hero } from "./Hero";
 import { Nav } from "./Nav";
@@ -30,6 +31,7 @@ const WORLD = buildDottedMap({
     lon: { lat: 51.51, lng: -0.13, label: "London" },
     sin: { lat: 1.35, lng: 103.82, label: "Singapore" },
     tok: { lat: 35.68, lng: 139.69, label: "Tokyo" },
+    syd: { lat: -33.87, lng: 151.21, label: "Sydney" },
   },
 });
 
@@ -41,6 +43,7 @@ export function Landing() {
         <Hero map={US} />
         <Providers />
         <Steps />
+        <Features />
         <Cost />
       </main>
       <Footer map={WORLD} />

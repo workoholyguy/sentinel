@@ -101,7 +101,9 @@ export function WorldMap({
                 style={{ transition: "stroke 0.4s ease" }}
               />
               {!reduced && (
-                <circle r={unit * 0.45} fill={color}>
+                // hidden until its motion starts, or it would sit at the map's top-left corner
+                <circle r={unit * 0.45} fill={color} visibility="hidden">
+                  <set attributeName="visibility" to="visible" begin={`${animationDuration + i * stagger}s`} fill="freeze" />
                   <animateMotion dur={`${2.6 + (i % 3) * 0.5}s`} begin={`${animationDuration + i * stagger}s`} repeatCount="indefinite" path={d} />
                 </circle>
               )}

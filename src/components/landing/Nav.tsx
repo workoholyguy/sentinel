@@ -8,6 +8,7 @@ import { LogoMark } from "./brand";
 
 const LINKS = [
   { href: "#how", label: "How it works" },
+  { href: "#why", label: "Why Uplink" },
   { href: "#cost", label: "Downtime cost" },
   { href: "/dashboard", label: "Live dashboard" },
 ];
