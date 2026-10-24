@@ -27,6 +27,7 @@ export interface Snapshot {
 }
 
 export type FaultCode =
+  | "IPV6_BLACKHOLE"
   | "WIFI_DISCONNECTED"
   | "DHCP_NO_LEASE"
   | "GATEWAY_UNREACHABLE"
@@ -116,6 +117,16 @@ export interface CallState {
   outcome?: CallOutcome;
 }
 
+/** A Devin session Sentinel started to write a repair plugin for a fault it couldn't fix. */
+export interface RepairState {
+  id: string;
+  url: string; // the live Devin session
+  status: "starting" | "working" | "blocked" | "finished" | "failed";
+  prUrl?: string;
+  title?: string;
+  updatedAt: string;
+}
+
 export interface Incident {
   id: string;
   startedAt: string;
@@ -124,6 +135,7 @@ export interface Incident {
   diagnosis?: Diagnosis;
   fixes: FixResult[];
   call?: CallState;
+  repair?: RepairState; // set when Sentinel asked Devin to write a new fix
   timeline: TimelineEvent[];
 }
 
