@@ -44,7 +44,7 @@ export function CallPanel({ call, provider, now }: { call: CallState; provider: 
               {stateLabel}
             </span>
           </div>
-          <div className="mt-2 truncate text-[32px] font-semibold leading-none tracking-tight">{provider}</div>
+          <div className="mt-2 text-[28px] font-semibold leading-tight tracking-tight">{provider}</div>
           <div className="mt-2 font-mono text-[15px] tabular text-white/50">{formatPhone(call.to)}</div>
         </div>
         <div className="text-right">

@@ -206,7 +206,7 @@ describe("requestRepair", () => {
     expect(log).toHaveBeenCalledWith(expect.stringContaining("500"));
   });
 
-  it("DEVIN_MOCK=1 simulates starting -> working -> finished with a fake PR over ~60s", async () => {
+  it("DEVIN_MOCK=1 simulates starting -> working -> finished with a fake PR over ~30s", async () => {
     let t = 1_000_000;
     const deps = { env: { DEVIN_MOCK: "1" }, now: () => t, log: () => {}, fetchImpl: vi.fn() };
     const s = await requestRepair(input, deps);
@@ -216,10 +216,10 @@ describe("requestRepair", () => {
     t += MOCK_TIMELINE.workingAfterMs;
     expect((await getRepairStatus(s!.id, deps))?.status).toBe("working");
 
-    t = 1_000_000 + 59_000;
+    t = 1_000_000 + MOCK_TIMELINE.finishedAfterMs - 1_000;
     expect((await getRepairStatus(s!.id, deps))?.status).toBe("working");
 
-    t = 1_000_000 + 60_000;
+    t = 1_000_000 + MOCK_TIMELINE.finishedAfterMs;
     const done = await getRepairStatus(s!.id, deps);
     expect(done?.status).toBe("finished");
     expect(done?.prUrl).toMatch(/^https:\/\/github\.com\/.+\/pull\/\d+$/);

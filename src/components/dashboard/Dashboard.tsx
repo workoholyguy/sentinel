@@ -5,6 +5,7 @@ import { FlaskConical } from "lucide-react";
 import type { Incident, StatusResponse } from "../../lib/types";
 import { CallPanel } from "./CallPanel";
 import { DemoControls } from "./DemoControls";
+import { DevinPanel } from "./DevinPanel";
 import { DiagnosisCard, FixesList, Stepper } from "./Incident";
 import { NetworkMap } from "./NetworkMap";
 import { HistoryList, Timeline, UptimeStats } from "./Sidebar";
@@ -149,6 +150,12 @@ function HealthyView({ data, poll, now }: { data: StatusResponse; poll: Poll; no
   );
 }
 
+// When Devin was asked for a fix (the orchestrator logs it); falls back to the incident start.
+function repairStart(incident: Incident): number {
+  const ev = incident.timeline.find((e) => e.text.startsWith("Devin session started"));
+  return Date.parse(ev?.at ?? incident.startedAt);
+}
+
 function IncidentView({ data, incident, now }: { data: StatusResponse; incident: Incident; now: number }) {
   const t0 = Date.parse(incident.startedAt);
   const ended = incidentEnd(incident);
@@ -188,7 +195,7 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
         <div className="grid min-h-0 flex-1 grid-cols-[1.35fr_1fr] gap-6">
           <DiagnosisCard diagnosis={incident.diagnosis} />
           <div className="flex min-h-0 flex-col gap-6">
-            <FixesList fixes={incident.fixes} status={incident.status} />
+            <FixesList fixes={incident.fixes} status={incident.status} devin={Boolean(incident.repair)} />
             {call && <Timeline events={incident.timeline} startedAt={incident.startedAt} className="flex-1" />}
             {!call && <HistoryList items={data.history} now={now} className="flex-1" />}
           </div>
@@ -198,6 +205,11 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
       <div className="col-span-4 min-h-0">
         {call ? (
           <CallPanel call={call} provider={data.profile.providerName} now={now} />
+        ) : incident.repair ? (
+          <div className="flex h-full min-h-0 flex-col gap-6">
+            <DevinPanel repair={incident.repair} startedAt={repairStart(incident)} now={now} />
+            <Timeline events={incident.timeline} startedAt={incident.startedAt} className="flex-1" />
+          </div>
         ) : (
           <Timeline events={incident.timeline} startedAt={incident.startedAt} className="h-full" />
         )}

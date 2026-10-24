@@ -21,7 +21,7 @@ export interface RequestRepairDeps {
 }
 
 /** Mock timeline (ms since creation) for DEVIN_MOCK=1 demos. */
-export const MOCK_TIMELINE = { workingAfterMs: 8_000, finishedAfterMs: 60_000 } as const;
+export const MOCK_TIMELINE = { workingAfterMs: 6_000, finishedAfterMs: 30_000 } as const;
 
 interface MockEntry {
   id: string;

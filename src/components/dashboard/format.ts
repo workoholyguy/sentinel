@@ -70,7 +70,9 @@ export function formatPhone(e164: string): string {
 export function linkLabel(p: Probe | undefined): string {
   if (!p) return "—";
   if (p.latencyMs != null) return `${p.latencyMs < 10 ? p.latencyMs.toFixed(1) : Math.round(p.latencyMs)} ms`;
-  return p.detail ?? "—";
+  // Long probe details ("SYN sent, no reply after 10 s") don't fit between two nodes.
+  if (p.detail && p.detail.length <= 14) return p.detail;
+  return p.status === "down" ? "no reply" : p.status === "degraded" ? "slow" : (p.detail ?? "—");
 }
 
 export function formatLoss(lossPct: number): string {
