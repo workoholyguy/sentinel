@@ -3,7 +3,7 @@
 import type { Incident, Snapshot } from "./types";
 import { state, now, log } from "./store";
 import { demoProfile } from "./profile";
-import { callDelaySeconds } from "./escalation";
+import { callDelaySeconds, confirmFault } from "./escalation";
 import { explainLocally } from "./llm";
 import { ispOutageSnapshot } from "./mock";
 import { askDevinForFix, startCustomerUpdate, diagnoseSnapshot as diagnoseReal, execContext, hasFixFor, pollDevinFix, pollProviderCall, runFixesFor, sampleNetwork, startProviderCall } from "./adapters";
@@ -73,6 +73,7 @@ async function tick() {
   if (!inc || DONE.includes(inc.status)) {
     const d = diagnoseSnapshot(s.snapshot);
     if (!d) {
+      s.suspect = undefined;
       // Healthy again: archive a finished incident after it has been on screen for a while.
       if (inc && Date.now() - Date.parse(inc.timeline.at(-1)?.at ?? inc.startedAt) > 20000) {
         s.history.unshift(inc);
@@ -81,6 +82,11 @@ async function tick() {
       return;
     }
     if (inc && DONE.includes(inc.status)) return; // keep showing the result
+    // One bad sample is a blip: only a fault that holds for a few seconds becomes an incident.
+    const check = confirmFault(s.suspect, d.fault, Date.now(), s.demo !== "none");
+    s.suspect = check.suspect;
+    if (!check.confirmed) return;
+    s.suspect = undefined;
     const fresh = newIncident(s.demo !== "none");
     s.incident = fresh;
     const worst = s.snapshot.probes.find((p) => p.status !== "ok");

@@ -11,6 +11,7 @@ export interface SentinelState {
   demo: DemoMode;
   busy: boolean; // a step (fix / call start) is in flight
   started: boolean;
+  suspect?: { fault: string; since: number }; // a fault seen but not yet held long enough to count
 }
 
 const g = globalThis as unknown as { __sentinel?: SentinelState };

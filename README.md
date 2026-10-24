@@ -26,7 +26,7 @@ flowchart LR
 
 | Step | How | Needs internet? |
 |---|---|---|
-| Watch | 5 hops (Wi-Fi, router, DNS, ISP edge, internet) checked with 6 probes every 1.5 s while healthy — macOS `networksetup`/`ipconfig`, `route`, `ping`, `traceroute`, plus a DNS lookup and an HTTPS request from Node | No |
+| Watch | 5 hops (Wi-Fi, router, DNS, ISP edge, internet) checked with 6 probes every 1.5 s while healthy; a fault must hold for 4 s before it counts, so a blip never becomes an incident — macOS `networksetup`/`ipconfig`, `route`, `ping`, `traceroute`, plus a DNS lookup and an HTTPS request from Node | No |
 | Diagnose | Ordered fault rules → `{fault, blame, confidence, evidence}`; a **local** Llama 3.2 3B (Ollama) explains it in plain English | No |
 | Fix | Repair plugins — flush DNS, switch resolver, renew DHCP, reconnect Wi-Fi (router reboot is simulated: there's no router API) — re-probing after each. They rehearse by default; see configuration | No |
 | Call the provider | Once a provider outage has lasted 3 minutes, a Vapi voice agent on a Twilio number calls support with the account and the evidence, pushes back, and gets a ticket / credit / technician window | Yes — over a phone hotspot when the ISP is down |
