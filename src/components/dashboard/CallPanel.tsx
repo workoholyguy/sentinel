@@ -90,7 +90,7 @@ export function CallPanel({ call, provider, now }: { call: CallState; provider: 
                   data-speaker={line.speaker}
                 >
                   <span className="mb-1 px-1 font-mono text-[10px] uppercase tracking-label text-white/35">
-                    {agent ? "Sentinel" : "Support rep"}
+                    {agent ? "UPLink" : "Support rep"}
                   </span>
                   <div
                     className={`max-w-[88%] rounded-2xl px-4 py-3 text-[16px] leading-snug ${
@@ -133,7 +133,7 @@ function Ringing({ provider, ringing }: { provider: string; ringing: boolean }) 
       </div>
       <div className="text-center">
         <div className="text-2xl font-medium tracking-tight">{ringing ? `Ringing ${provider}…` : `Dialing ${provider}…`}</div>
-        <div className="mt-2 text-[15px] text-white/45">Sentinel will speak to support on your behalf</div>
+        <div className="mt-2 text-[15px] text-white/45">UPLink will speak to support on your behalf</div>
       </div>
     </div>
   );

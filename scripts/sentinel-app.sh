@@ -22,10 +22,10 @@ curl -s -o /dev/null -m 2 "$URL/api/status" || { echo "Sentinel didn't start —
 for app in "Google Chrome" "Microsoft Edge" "Chromium" "Brave Browser" "Arc"; do
   if [ -d "/Applications/$app.app" ]; then
     # Its own profile, so the window opens as an app even when the browser is already running.
-    open -na "$app" --args --app="$URL" --user-data-dir="$HOME/.sentinel/window" --no-first-run --no-default-browser-check \
+    open -na "$app" --args --app="$URL/dashboard" --user-data-dir="$HOME/.sentinel/window" --no-first-run --no-default-browser-check \
       --window-size=1512,945 ${FULLSCREEN:+--start-fullscreen}
     echo "Sentinel is open in its own window ($app)."
     exit 0
   fi
 done
-open "$URL"
+open "$URL/dashboard"
