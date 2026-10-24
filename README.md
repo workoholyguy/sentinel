@@ -55,7 +55,7 @@ rules in [`AGENTS.md`](AGENTS.md), then ran five Devin sessions in parallel, one
 | A | Network monitor + diagnosis | `src/lib/monitor/`, `src/lib/diagnose/` |
 | B | Repair plugins | `src/lib/fixes/` |
 | C | Voice-call agent | `src/lib/call/` |
-| D | Mission-control dashboard | `src/components/`, `src/app/` |
+| D | Mission-control dashboard | `src/components/`, `src/app/page.tsx`, `src/app/layout.tsx` |
 | E | Devin runtime client | `src/lib/devin/` |
 
 Together with the repair Devin opened at runtime, Devin's commits were about **73% of the code at
@@ -143,12 +143,12 @@ the cloud watchdog stay off.
 | `SENTINEL_CUSTOMER_NUMBER` | Customer's phone for the follow-up call (E.164); unset means no follow-up call |
 | `SENTINEL_CUSTOMER_NAME` | Customer name the agent uses |
 | `SENTINEL_CALLBACK_NUMBER` | Callback number the agent gives the provider |
-| `SENTINEL_CALL_AFTER_SECONDS` | How long a real provider outage lasts before the call (default 180) |
-| `SENTINEL_DEMO_CALL_AFTER_SECONDS` | The same for simulated demo faults (default 10) |
+| `SENTINEL_CALL_AFTER_SECONDS` | How long a real provider outage lasts before the call (default 180; 8 on stage) |
+| `SENTINEL_DEMO_CALL_AFTER_SECONDS` | The same for simulated faults (default 10) |
 | `WATCHDOG_URL`, `WATCHDOG_TOKEN` | Cloud watchdog address and shared bearer token; both set turns it on |
 | `WATCHDOG_QUIET_SECONDS` | Silence before the cloud calls (default 60, minimum 10) |
-| `DEVIN_API_KEY` | Devin service-user key; enables runtime repair sessions |
-| `DEVIN_ORG_ID` | Devin organization for those sessions |
+| `DEVIN_API_KEY` | Devin API key; enables runtime repair sessions |
+| `DEVIN_ORG_ID` | Devin organization; when set, sessions use the v3 organization API (otherwise v1) |
 | `DEVIN_API_BASE` | Devin API base URL (default `https://api.devin.ai`) |
 | `DEVIN_MAX_ACU` | ACU cap per Devin session (default 8) |
 | `DEVIN_MOCK` | `1` simulates a Devin session without calling the API |
