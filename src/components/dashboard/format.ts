@@ -100,6 +100,7 @@ export const STEP_LABEL: Record<IncidentStatus, string> = {
   escalating: "Escalating",
   calling: "Calling ISP",
   ticketed: "Ticketed",
+  needs_human: "Needs a human",
 };
 
 export type StepState = "done" | "current" | "todo";
@@ -110,7 +111,12 @@ export function isEscalated(incident: Pick<Incident, "status" | "call" | "diagno
 
 /** The steps to render for a status, plus the state of each one. */
 export function stepsFor(status: IncidentStatus, escalated = false): { id: IncidentStatus; state: StepState }[] {
-  const path = escalated || ESCALATE_PATH.slice(3).includes(status) ? ESCALATE_PATH : RESOLVE_PATH;
+  const path =
+    status === "needs_human"
+      ? [...RESOLVE_PATH.slice(0, 3), "needs_human" as const]
+      : escalated || ESCALATE_PATH.slice(3).includes(status)
+        ? ESCALATE_PATH
+        : RESOLVE_PATH;
   const idx = path.indexOf(status);
   const terminal = isTerminal(status);
   return path.map((id, i) => ({
@@ -120,7 +126,7 @@ export function stepsFor(status: IncidentStatus, escalated = false): { id: Incid
 }
 
 export function isTerminal(status: IncidentStatus): boolean {
-  return status === "resolved" || status === "ticketed";
+  return status === "resolved" || status === "ticketed" || status === "needs_human";
 }
 
 export function isCallLive(call: CallState): boolean {

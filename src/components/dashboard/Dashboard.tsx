@@ -12,14 +12,14 @@ import { HistoryList, Timeline, UptimeStats } from "./Sidebar";
 import { formatClock, formatDuration, incidentEnd, incidentTitle, isEscalated, isTerminal, probeFor } from "./format";
 import { type Poll, useNow, useStatusPoll } from "./hooks";
 
-const AMBIENT = { calm: "56 225 255", alert: "255 77 109", good: "52 211 153" };
+const AMBIENT = { calm: "56 225 255", alert: "255 77 109", good: "52 211 153", warn: "251 191 36" };
 
 export function Dashboard() {
   const poll = useStatusPoll();
   const { data, connected } = poll;
   const now = useNow();
   const incident = data?.incident ?? null;
-  const mood = !incident ? "calm" : isTerminal(incident.status) ? "good" : "alert";
+  const mood = !incident ? "calm" : incident.status === "needs_human" ? "warn" : isTerminal(incident.status) ? "good" : "alert";
 
   return (
     <main className="relative h-screen w-screen overflow-hidden" style={{ ["--ambient" as string]: AMBIENT[mood] }}>
@@ -161,6 +161,7 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
   const ended = incidentEnd(incident);
   const end = ended ?? now;
   const done = isTerminal(incident.status);
+  const human = incident.status === "needs_human";
   const escalated = isEscalated(incident);
   const call = incident.call;
 
@@ -171,9 +172,9 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2.5">
-                <span className={`h-2.5 w-2.5 rounded-full ${done ? "bg-ok" : "alarm bg-bad"}`} />
-                <span className={`label ${done ? "!text-ok/80" : "!text-bad/90"}`}>
-                  {done ? (incident.status === "ticketed" ? "Escalated · ticket open" : "Resolved") : "Active incident"}
+                <span className={`h-2.5 w-2.5 rounded-full ${human ? "bg-warn" : done ? "bg-ok" : "alarm bg-bad"}`} />
+                <span className={`label ${human ? "!text-warn/90" : done ? "!text-ok/80" : "!text-bad/90"}`}>
+                  {human ? "Needs a human" : done ? (incident.status === "ticketed" ? "Escalated · ticket open" : "Resolved") : "Active incident"}
                 </span>
               </div>
               <h1 className="mt-2 text-[44px] font-semibold leading-none tracking-[-0.035em]">{incidentTitle(incident)}</h1>
@@ -207,7 +208,13 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
           <CallPanel call={call} provider={data.profile.providerName} now={now} />
         ) : incident.repair ? (
           <div className="flex h-full min-h-0 flex-col gap-6">
-            <DevinPanel repair={incident.repair} startedAt={repairStart(incident)} now={now} />
+            <DevinPanel
+              repair={incident.repair}
+              startedAt={repairStart(incident)}
+              now={now}
+              lastRepair={data.lastRepair}
+              hadPlaybook={incident.fixes.length > 0}
+            />
             <Timeline events={incident.timeline} startedAt={incident.startedAt} className="flex-1" />
           </div>
         ) : (

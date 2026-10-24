@@ -1,4 +1,4 @@
-import type { Diagnosis, FaultCode, Probe, Snapshot } from "../types";
+import type { Diagnosis, FaultCode, FixResult, Probe, Snapshot } from "../types";
 
 export interface RepairBriefInput {
   fault: FaultCode | string;
@@ -6,6 +6,8 @@ export interface RepairBriefInput {
   snapshot: Snapshot;
   platform: "darwin" | "linux";
   repo: string;
+  /** Playbook fixes that already ran and did not heal the fault. */
+  failedFixes?: FixResult[];
 }
 
 export function pluginIdFor(fault: FaultCode | string): string {
@@ -26,13 +28,15 @@ function probeLine(p: Probe): string {
 }
 
 export function buildRepairBrief(input: RepairBriefInput): string {
-  const { fault, diagnosis, snapshot, platform, repo } = input;
+  const { fault, diagnosis, snapshot, platform, repo, failedFixes = [] } = input;
   const id = pluginIdFor(fault);
   const faultText = String(fault);
 
   const lines: string[] = [
     "You are writing a repair plugin for Sentinel, an AI that watches a small office network, diagnoses outages with an on-device model and fixes them with repair plugins.",
-    "Sentinel hit a fault that no existing repair plugin handles. Write ONE new plugin that fixes it.",
+    failedFixes.length
+      ? "Sentinel's existing repair plugins ran for this fault and did not fix it. Write ONE new plugin that does."
+      : "Sentinel hit a fault that no existing repair plugin handles. Write ONE new plugin that fixes it.",
     "",
     "## Repository",
     `- Repo: ${repo} (branch off main)`,
@@ -53,6 +57,11 @@ export function buildRepairBrief(input: RepairBriefInput): string {
   lines.push("", "### Evidence");
   if (diagnosis?.evidence.length) for (const e of diagnosis.evidence) lines.push(`- ${e}`);
   else lines.push("- (no diagnosis evidence supplied; rely on the probe data below)");
+
+  if (failedFixes.length) {
+    lines.push("", "### Fixes already tried (they did not help — do not repeat them)");
+    for (const f of failedFixes) lines.push(`- ${f.pluginId}: ${f.actions.join(" · ") || "(no actions)"}${f.detail ? ` — ${f.detail}` : ""}`);
+  }
 
   lines.push("", `### Probe data (snapshot at ${snapshot.at})`, "Node health:");
   lines.push(

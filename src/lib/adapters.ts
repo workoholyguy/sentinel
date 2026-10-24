@@ -6,7 +6,7 @@ import { diagnose } from "./diagnose";
 import { fixesFor, loadExtraPlugins, registry, runFixes } from "./fixes";
 import { createExecContext } from "./fixes/exec";
 import { getCall, startCall } from "./call";
-import { getRepairStatus, requestRepair } from "./devin";
+import { getRepairStatus, peekLastRepair, requestRepair } from "./devin";
 
 const platform: "darwin" | "linux" = process.platform === "darwin" ? "darwin" : "linux";
 
@@ -60,11 +60,17 @@ const REPO = process.env.SENTINEL_REPO ?? "https://github.com/workoholyguy/senti
 
 export async function askDevinForFix(incident: Incident, snapshot: Snapshot): Promise<RepairState | null> {
   if (!incident.diagnosis) return null;
-  const session = await requestRepair({ fault: incident.diagnosis.fault, diagnosis: incident.diagnosis, snapshot, platform, repo: REPO });
+  const failedFixes = incident.fixes.filter((f) => !f.ok);
+  const session = await requestRepair({ fault: incident.diagnosis.fault, diagnosis: incident.diagnosis, snapshot, platform, repo: REPO, failedFixes });
   return session ? { ...session } : null;
 }
 
 export async function pollDevinFix(id: string): Promise<RepairState | null> {
   const session = await getRepairStatus(id);
+  return session ? { ...session } : null;
+}
+
+export function lastDevinRepair(): RepairState | null {
+  const session = peekLastRepair();
   return session ? { ...session } : null;
 }

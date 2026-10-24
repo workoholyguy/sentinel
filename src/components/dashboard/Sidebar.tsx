@@ -59,9 +59,11 @@ export function HistoryList({ items, now, className = "" }: { items: Incident[];
                   ? (h.call?.outcome?.ticketNumber ?? "ISP called")
                   : h.repair?.status === "finished"
                     ? "Devin fixed"
-                    : h.status === "resolved"
-                      ? "Auto-fixed"
-                      : "Closed"}
+                    : h.status === "needs_human"
+                      ? "Needs a human"
+                      : h.status === "resolved"
+                        ? "Auto-fixed"
+                        : "Closed"}
               </span>
             </li>
           );

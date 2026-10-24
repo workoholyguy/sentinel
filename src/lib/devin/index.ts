@@ -3,6 +3,7 @@ import {
   createRepairSession,
   DEFAULT_DEVIN_API_BASE,
   getRepairSession,
+  latestRepairWithPr,
   type DevinClientOptions,
   type FetchLike,
   type RepairSession,
@@ -94,7 +95,8 @@ export async function requestRepair(input: RepairBriefInput, deps: RequestRepair
 
   try {
     const brief = buildRepairBrief(input);
-    return await createRepairSession(brief, { ...opts, title, tags: ["sentinel", "repair", String(input.fault)] });
+    const maxAcu = Number(env.DEVIN_MAX_ACU ?? 8) || undefined;
+    return await createRepairSession(brief, { ...opts, title, maxAcu, tags: ["sentinel", "repair", String(input.fault)] });
   } catch (err) {
     log(`Devin repair request failed for fault "${String(input.fault)}": ${err instanceof Error ? err.message : String(err)}`);
     return null;
@@ -123,8 +125,50 @@ export async function getRepairStatus(id: string, deps: RequestRepairDeps = {}):
   }
 }
 
+let remoteLast: { at: number; value: RepairSession | null } | null = null;
+let remoteInflight: Promise<void> | null = null;
+
+/**
+ * The newest Devin repair that opened a PR, for showing next to a live session.
+ * Never waits on the network: returns what is known now and refreshes from the API
+ * in the background at most once a minute (a failed refresh keeps the last value).
+ */
+export function peekLastRepair(deps: RequestRepairDeps = {}): RepairSession | null {
+  const env = deps.env ?? process.env;
+  const now = deps.now ?? Date.now;
+  const finishedMock = [...mockSessions.values()]
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map((m) => mockStatus(m, now()))
+    .find((m) => m.prUrl);
+  if (finishedMock) return finishedMock;
+  if (isMock(env)) return null;
+  const opts = clientOptions(env, deps.fetchImpl);
+  if (!opts) return null;
+  if ((!remoteLast || now() - remoteLast.at > 60_000) && !remoteInflight) {
+    remoteInflight = latestRepairWithPr(opts)
+      .then((value) => {
+        remoteLast = { at: now(), value };
+      })
+      .catch((err) => {
+        (deps.log ?? defaultLog)(`Listing Devin repairs failed: ${err instanceof Error ? err.message : String(err)}`);
+        remoteLast = { at: now(), value: remoteLast?.value ?? null };
+      })
+      .finally(() => {
+        remoteInflight = null;
+      });
+  }
+  return remoteLast?.value ?? null;
+}
+
+/** Test helper: wait for a background refresh started by peekLastRepair. */
+export async function settleLastRepair(): Promise<void> {
+  await remoteInflight;
+}
+
 /** Test helper: forget simulated sessions. */
 export function resetMockRepairs(): void {
   mockSessions.clear();
+  remoteLast = null;
+  remoteInflight = null;
   mockSeq = 0;
 }
