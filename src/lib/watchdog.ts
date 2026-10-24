@@ -79,7 +79,9 @@ export async function sendBeat(payload: BeatPayload, env: Env = process.env): Pr
 
 // ---- wired into the Uplink loop (src/lib/sentinel.ts) ----------------------------------------
 const BEAT_MS = 5000;
+const CLOUD_CALL_FRESH_MS = 10 * 60 * 1000; // an older cloud call is history, not something to follow now
 let lastBeatSent = 0;
+let lastBeatArmed = false; // the last check-in the cloud got carried a call to place
 let beatInFlight: Promise<unknown> | null = null;
 
 /** Check in with the cloud (every 5 s, or now when `force`). Carries the call to place if we go dark. */
@@ -101,6 +103,7 @@ export async function heartbeat(force = false): Promise<unknown> {
     if (!r) return null;
     const wasOffline = w.lastOk != null && Date.now() - w.lastOk > w.quietSeconds * 1000;
     w.lastOk = Date.now();
+    lastBeatArmed = Boolean(callBody);
     if (wasOffline) term("info", "back online — cloud watchdog reached");
     if (r.called && r.called.id !== w.acked) {
       if (!w.called) {
@@ -118,20 +121,54 @@ export async function heartbeat(force = false): Promise<unknown> {
   return beatInFlight;
 }
 
-/** If the cloud already called the provider while we were dark, follow that call instead of placing another. */
-export async function adoptCloudCall(inc: Incident): Promise<boolean> {
+/**
+ * The cloud called the provider while we were dark: follow that call — whatever state the incident on
+ * screen is in, or on a new one if the laptop never saw the outage (lid shut) — so the customer still
+ * gets the debrief. True when it took over the incident; the loop's next tick follows the call.
+ */
+export async function adoptCloudCall(): Promise<boolean> {
+  const s = state();
+  const w = s.watchdog;
+  const c = w?.called;
+  if (!w || !c || s.busy) return false;
+  const fresh = c.ok && Date.now() - c.at < CLOUD_CALL_FRESH_MS;
+  let inc = s.incident;
+  if (!fresh || inc?.call) {
+    // A failed or stale cloud call, or Uplink already got through itself: nothing to follow.
+    w.acked = c.id;
+    w.called = null;
+    return false;
+  }
+  const call = await pollProviderCall(c.id);
+  if (!inc) {
+    inc = { ...darkIncident(s.snapshot, new Date(c.at - quietSeconds() * 1000)), id: `inc_${Date.now().toString(36)}` };
+    s.incident = inc;
+  }
+  inc.call = call;
+  inc.status = "calling";
+  s.providerCalledAt = c.at;
+  w.acked = c.id;
+  w.called = null;
+  log(inc, "call", `The cloud watchdog called ${demoProfile.providerName} while the house was offline — following that call`);
+  return true;
+}
+
+/**
+ * About to call the provider ourselves: not when the cloud already has, or is about to because the
+ * house has been dark past the quiet window (Uplink follows that call once it's back online).
+ */
+export async function cloudIsCalling(inc: Incident): Promise<boolean> {
   if (!watchdogEnabled()) return false;
   await heartbeat(true); // back online? did the cloud call?
   const s = state();
-  const c = s.watchdog?.called;
-  if (!c?.ok || !c.id) return false;
-  inc.call = await pollProviderCall(c.id);
-  inc.status = "calling";
-  s.providerCalledAt = c.at;
-  s.watchdog!.acked = c.id;
-  s.watchdog!.called = null;
-  log(inc, "call", `The cloud watchdog called ${demoProfile.providerName} while the house was offline — following that call`);
-  return true;
+  const w = s.watchdog;
+  if (w?.called) return true; // the top of the next tick follows it
+  const silentMs = w?.lastOk == null ? 0 : Date.now() - w.lastOk;
+  const dark = lastBeatArmed && silentMs > quietSeconds() * 1000 && s.snapshot.nodes.internet !== "ok";
+  if (dark && !inc.timeline.some((e) => e.text.startsWith("Offline"))) {
+    log(inc, "call", `Offline for ${Math.round(silentMs / 1000)} s — the cloud watchdog is calling ${demoProfile.providerName}; Uplink follows that call once it's back online`);
+  }
+  return dark;
 }
 
 /** Stop the cloud from calling (we're shutting down on purpose, not going dark). */
