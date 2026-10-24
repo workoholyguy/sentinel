@@ -1,75 +1,103 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ArrowRight, Play } from "lucide-react";
-import { DevinMark } from "./brand";
-import { LinkField, LinkStrip, useLinkCycle } from "./LinkField";
-import { ProductDemo } from "./ProductDemo";
-import { Button } from "./ui";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { type MapData, pinStyle, WorldMap } from "../ui/map";
+import { Button, Eyebrow } from "./ui";
+
+const ARCS = ["sea", "den", "chi", "aus", "atl", "ny"].map((end) => ({ start: "sf", end }));
+
+// One office at a time has an outage; Uplink resolves it with whichever level fits.
+const INCIDENTS = [
+  { pin: "ny", place: "New York, US", time: "10:24 AM", cause: "ISP network issue", fixed: "Resolved in 6 min", how: "Ticket opened with your ISP" },
+  { pin: "chi", place: "Chicago, US", time: "11:02 AM", cause: "DNS resolver down", fixed: "Resolved in 4 s", how: "Fixed on-device" },
+  { pin: "atl", place: "Atlanta, US", time: "1:47 PM", cause: "Unknown fault", fixed: "Resolved in 11 min", how: "Devin wrote the fix" },
+];
+const DETECTED_MS = 3400;
+const RESOLVED_MS = 2400;
+
+const ORANGE = "#f05a28";
+const GREEN = "#16a34a";
+const BLUE = "#3b82f6";
+
+function useIncidents() {
+  const reduced = useReducedMotion();
+  const [state, setState] = useState({ i: 0, resolved: false });
+  useEffect(() => {
+    if (reduced) return;
+    const t = setTimeout(
+      () => setState((s) => (s.resolved ? { i: (s.i + 1) % INCIDENTS.length, resolved: false } : { ...s, resolved: true })),
+      state.resolved ? RESOLVED_MS : DETECTED_MS,
+    );
+    return () => clearTimeout(t);
+  }, [state, reduced]);
+  return state;
+}
 
 const rise = (delay: number) => ({
-  initial: { opacity: 0, y: 18, filter: "blur(8px)" },
-  animate: { opacity: 1, y: 0, filter: "blur(0px)" },
-  transition: { delay, duration: 0.8, ease: [0.2, 0.7, 0.2, 1] as const },
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { delay, duration: 0.7, ease: [0.2, 0.7, 0.2, 1] as const },
 });
 
-export function Hero() {
-  const cycle = useLinkCycle(); // one clock for the desktop field and the mobile strip
+export function Hero({ map }: { map: MapData }) {
+  const { i, resolved } = useIncidents();
+  const inc = INCIDENTS[i];
+  const color = resolved ? GREEN : ORANGE;
+
   return (
-    <section id="top" className="relative overflow-hidden pb-20 sm:pb-28">
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <div className="absolute inset-0 bg-[radial-gradient(rgb(0_0_0/0.07)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(70%_55%_at_50%_30%,black,transparent)]" />
-        <div className="absolute left-1/2 top-[-12%] h-[640px] w-[1100px] max-w-[160vw] -translate-x-1/2 rounded-full bg-[conic-gradient(from_200deg_at_50%_50%,#c7d2fe,#ddd6fe,#bae6fd,#fbcfe8,#c7d2fe)] opacity-55 blur-[110px]" />
-      </div>
-
-      <div className="relative mx-auto max-w-[1320px] px-5 sm:px-8">
-        <div className="relative xl:h-[730px]">
-          <LinkField {...cycle} className="absolute inset-0 hidden xl:block" />
-
-          <div className="relative z-10 flex flex-col items-center pt-32 text-center sm:pt-40">
-            <motion.a
-              {...rise(0.05)}
-              href="#demo"
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white/80 py-1.5 pl-1.5 pr-4 text-[14px] text-neutral-600 shadow-sm backdrop-blur transition hover:border-neutral-300"
-            >
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-violet-600">
-                <DevinMark className="h-3.5 w-3.5" color="#fff" />
-              </span>
-              Repairs powered by <span className="font-semibold text-neutral-900">Devin</span>
-            </motion.a>
-
-            <motion.h1 {...rise(0.15)} className="mt-7 text-[clamp(46px,7.6vw,104px)] font-semibold leading-[0.96] tracking-[-0.055em] text-neutral-950">
-              Internet down?
-              <br />
-              <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-500 bg-clip-text text-transparent">Already handled.</span>
-            </motion.h1>
-
-            <motion.p {...rise(0.28)} className="mt-6 max-w-[540px] text-[17px] leading-relaxed text-neutral-500 sm:text-[19px]">
-              UPLink fixes your office network on its own, and calls your ISP when it can&apos;t.
-            </motion.p>
-
-            <motion.div {...rise(0.4)} className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
-              <Button href="#get-started" tone="dark" className="px-6 py-3.5 text-[16px]">
-                Book a demo <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button href="#demo" tone="outline" className="px-6 py-3.5 text-[16px]">
-                <Play className="h-3.5 w-3.5 fill-current" /> Watch it work
-              </Button>
-            </motion.div>
-
-            <motion.div {...rise(0.6)} className="mt-12 xl:hidden">
-              <LinkStrip {...cycle} />
-            </motion.div>
-          </div>
+    <section id="top" className="relative overflow-hidden pt-[72px]">
+      <div className="mx-auto grid max-w-[1160px] items-center gap-12 px-5 py-14 sm:px-8 lg:min-h-[620px] lg:grid-cols-[1fr_1.15fr] lg:gap-6 lg:py-8">
+        <div>
+          <motion.div {...rise(0)}>
+            <Eyebrow dot>Autonomous network operations</Eyebrow>
+          </motion.div>
+          <motion.h1 {...rise(0.08)} className="mt-6 text-[clamp(42px,4.4vw,62px)] font-semibold leading-[1.04] tracking-[-0.045em] text-neutral-950">
+            Internet down?
+            <br />
+            <span className="text-neutral-400">Already handled.</span>
+          </motion.h1>
+          <motion.p {...rise(0.16)} className="mt-6 max-w-[440px] text-[17px] leading-[1.65] text-neutral-500">
+            Uplink monitors your business network, finds the source of outages, and handles your internet provider so your team
+            doesn&apos;t have to.
+          </motion.p>
+          <motion.div {...rise(0.24)} className="mt-9 flex flex-wrap gap-3">
+            <Button href="#book">
+              Book a demo <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button href="#how" tone="light">
+              See how it works
+            </Button>
+          </motion.div>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55, duration: 1, ease: [0.2, 0.7, 0.2, 1] }}
-          className="relative mt-10 xl:mt-8"
-        >
-          <ProductDemo />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2, duration: 1 }} className="relative lg:-mr-10">
+          <WorldMap map={map} dots={ARCS} lineColor={BLUE} dotColor="#cfcfcf" alert={{ pin: inc.pin, color }}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${i}-${resolved}`}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.3 }}
+                className="pointer-events-none absolute"
+                style={pinStyle(map, inc.pin)}
+              >
+                <span className="absolute bottom-2 left-0 h-9 w-px -translate-x-1/2" style={{ background: color }} />
+                <div className="absolute bottom-11 left-0 w-[184px] -translate-x-[82%] rounded-xl bg-neutral-950 px-3 py-2.5 shadow-[0_20px_40px_-12px_rgb(0_0_0/0.45)] sm:w-[240px] sm:px-4 sm:py-3">
+                  <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400">
+                    <span className="h-2 w-2 rounded-full" style={{ background: color }} />
+                    {resolved ? inc.fixed : "Outage detected"}
+                  </div>
+                  <div className="mt-1.5 text-[12.5px] font-medium text-white sm:text-[14px]">
+                    {inc.place} · {inc.time}
+                  </div>
+                  <div className="mt-0.5 text-[11.5px] text-neutral-500 sm:text-[12.5px]">{resolved ? inc.how : inc.cause}</div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </WorldMap>
         </motion.div>
       </div>
     </section>

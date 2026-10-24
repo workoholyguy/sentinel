@@ -108,7 +108,7 @@ function Boot() {
     <div className="flex flex-1 items-center justify-center">
       <div className="flex items-center gap-3 font-mono text-sm uppercase tracking-label text-white/40">
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
-        Connecting to UPLink
+        Connecting to Uplink
       </div>
     </div>
   );

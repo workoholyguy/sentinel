@@ -1,40 +1,57 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-/** A page band with the thin double rails that frame the content (as on the reference sites). */
 export function Section({ id, children, className = "" }: { id?: string; children: ReactNode; className?: string }) {
   return (
-    <section id={id} className={`relative scroll-mt-20 border-t border-neutral-200/80 ${className}`}>
-      <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-full max-w-[1264px] -translate-x-1/2 border-x border-neutral-200/80 lg:block" />
-      <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-full max-w-[1200px] -translate-x-1/2 border-x border-neutral-200/80 lg:block" />
-      <div className="relative mx-auto w-full max-w-[1200px] px-5 sm:px-10 lg:px-16">{children}</div>
+    <section id={id} className={`relative scroll-mt-20 ${className}`}>
+      <div className="mx-auto w-full max-w-[1160px] px-5 sm:px-8">{children}</div>
     </section>
   );
 }
 
-export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`font-mono text-[12px] uppercase tracking-[0.14em] text-neutral-500 ${className}`}>{children}</div>;
-}
-
-export function Heading({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
+export function Eyebrow({ children, dot = false, className = "" }: { children: ReactNode; dot?: boolean; className?: string }) {
   return (
-    <div className="mx-auto max-w-2xl text-center">
-      <h2 className="text-[clamp(34px,5vw,58px)] font-semibold leading-[1.04] tracking-[-0.045em] text-neutral-950">{children}</h2>
-      {sub && <p className="mx-auto mt-5 max-w-lg text-[17px] leading-relaxed text-neutral-500">{sub}</p>}
+    <div className={`flex items-center gap-2.5 text-[12px] font-medium uppercase tracking-[0.12em] text-neutral-400 ${className}`}>
+      {dot && <span className="h-2 w-2 rounded-full bg-blue-500" />}
+      {children}
     </div>
   );
 }
 
-type ButtonTone = "dark" | "light" | "outline" | "navy";
-const TONES: Record<ButtonTone, string> = {
+/** "01  MONITOR" */
+export function StepLabel({ n, children }: { n: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-4 text-[12px] font-medium uppercase tracking-[0.14em]">
+      <span className="font-mono text-neutral-900">{n}</span>
+      <span className="text-neutral-500">{children}</span>
+    </div>
+  );
+}
+
+/** A quiet list marker: a small rounded square with a dot. */
+export function Bullets({ items }: { items: string[] }) {
+  return (
+    <ul className="space-y-3.5">
+      {items.map((item) => (
+        <li key={item} className="flex items-center gap-3.5 text-[15.5px] text-neutral-600">
+          <span className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] border border-neutral-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-neutral-400" />
+          </span>
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+type Tone = "dark" | "light";
+const TONES: Record<Tone, string> = {
   dark: "bg-neutral-950 text-white hover:bg-neutral-800",
-  light: "bg-white text-neutral-950 shadow-[0_8px_30px_-8px_rgb(30_27_75/0.45)] hover:bg-indigo-50",
-  outline: "border border-neutral-200 bg-white text-neutral-950 hover:border-neutral-300",
-  navy: "bg-[#1b1a4b] text-white hover:bg-[#24225e]",
+  light: "border border-neutral-200 bg-white text-neutral-900 hover:border-neutral-300",
 };
 
-export function Button({ href, tone = "dark", children, className = "" }: { href: string; tone?: ButtonTone; children: ReactNode; className?: string }) {
-  const cls = `inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-medium transition ${TONES[tone]} ${className}`;
+export function Button({ href, tone = "dark", children, className = "" }: { href: string; tone?: Tone; children: ReactNode; className?: string }) {
+  const cls = `inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-[14.5px] font-medium transition ${TONES[tone]} ${className}`;
   return href.startsWith("/") ? (
     <Link href={href} className={cls}>
       {children}
@@ -44,4 +61,9 @@ export function Button({ href, tone = "dark", children, className = "" }: { href
       {children}
     </a>
   );
+}
+
+/** White card used by every product visual. */
+export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`rounded-2xl border border-neutral-200/80 bg-white shadow-[0_24px_60px_-30px_rgb(0_0_0/0.18)] ${className}`}>{children}</div>;
 }

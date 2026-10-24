@@ -1,21 +1,12 @@
 import { useId } from "react";
 
-/** UPLink mark: a node sending signal upward. */
-export function LogoMark({ className = "h-7 w-7" }: { className?: string }) {
-  const id = useId();
+/** Uplink mark: stacked chevrons, signal going up. */
+export function LogoMark({ className = "h-6 w-6" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden="true" fill="none">
-      <defs>
-        <linearGradient id={`${id}-g`} x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#38e1ff" />
-          <stop offset="0.55" stopColor="#5b8cff" />
-          <stop offset="1" stopColor="#a78bfa" />
-        </linearGradient>
-      </defs>
-      <rect x="0.5" y="0.5" width="31" height="31" rx="9" fill="#0b0f17" stroke="rgb(255 255 255 / 0.12)" />
-      <path d="M8.5 15.5 16 8l7.5 7.5" stroke={`url(#${id}-g)`} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M11.8 20.2 16 16l4.2 4.2" stroke={`url(#${id}-g)`} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
-      <circle cx="16" cy="24.2" r="2" fill="#38e1ff" />
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4.5 10.5 12 4l7.5 6.5" />
+      <path d="M4.5 15.25 12 8.75l7.5 6.5" />
+      <path d="M4.5 20 12 13.5l7.5 6.5" />
     </svg>
   );
 }

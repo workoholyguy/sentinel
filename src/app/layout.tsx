@@ -8,7 +8,7 @@ const geistSans = GeistSans;
 const geistMono = GeistMono;
 
 export const metadata: Metadata = {
-  title: "UPLink · Your network's advocate",
+  title: "Uplink · Your network's advocate",
   description:
     "An AI agent for your office network: diagnoses outages on-device, fixes what it can, calls your provider with proof when it can't, and hands new faults to Devin.",
 };
