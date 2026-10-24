@@ -2,6 +2,7 @@ import { buildDottedMap } from "../ui/dotted-map";
 import { Cost } from "./Cost";
 import { Features } from "./Features";
 import { Footer } from "./Footer";
+import { GetStarted } from "./GetStarted";
 import { Hero } from "./Hero";
 import { Nav } from "./Nav";
 import { Providers } from "./Providers";
@@ -22,19 +23,6 @@ const US = buildDottedMap({
   },
 });
 
-const WORLD = buildDottedMap({
-  height: 56,
-  places: {
-    sf: { lat: 37.77, lng: -122.42, label: "San Francisco" },
-    ny: { lat: 40.71, lng: -74.0, label: "New York" },
-    sao: { lat: -23.55, lng: -46.63, label: "São Paulo" },
-    lon: { lat: 51.51, lng: -0.13, label: "London" },
-    sin: { lat: 1.35, lng: 103.82, label: "Singapore" },
-    tok: { lat: 35.68, lng: 139.69, label: "Tokyo" },
-    syd: { lat: -33.87, lng: 151.21, label: "Sydney" },
-  },
-});
-
 export function Landing() {
   return (
     <div className="relative min-h-screen overflow-x-clip bg-white text-neutral-950">
@@ -45,8 +33,9 @@ export function Landing() {
         <Steps />
         <Features />
         <Cost />
+        <GetStarted />
       </main>
-      <Footer map={WORLD} />
+      <Footer />
     </div>
   );
 }
