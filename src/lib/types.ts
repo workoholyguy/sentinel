@@ -1,5 +1,5 @@
 // Sentinel shared contracts. Every slice builds against these types.
-// Owned by the integrator (Claude Code). Devin slices must NOT edit this file;
+// Owned by the integrator. Devin slices must NOT edit this file;
 // if a slice needs a change, note it in the PR description instead.
 
 export type Health = "ok" | "degraded" | "down" | "unknown";

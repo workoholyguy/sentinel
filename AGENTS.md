@@ -1,4 +1,4 @@
-# Sentinel — rules for every agent (Devin, Claude Code)
+# Sentinel — rules for every Devin session
 
 **Sentinel is your network's advocate.** It watches the network, diagnoses outages with a LOCAL model
 (it keeps working when the internet is down), fixes what it can, and when the internet provider is at
