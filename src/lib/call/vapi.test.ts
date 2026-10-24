@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { callingIncident } from "../mock";
 import { demoProfile } from "../profile";
-import { getCallState, mapStatus, startProviderCall } from "./vapi";
+import { getCallState, mapStatus, normalizeTicket, startProviderCall } from "./vapi";
 
 function fakeFetch(body: unknown, status = 200) {
   return vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () => new Response(JSON.stringify(body), { status }));
@@ -120,5 +120,17 @@ describe("getCallState", () => {
     const state = await getCallState("vapi_123", { apiKey: "k", fetchImpl });
     expect(state.status).toBe("failed");
     expect(state.outcome?.summary).toMatch(/customer-busy/);
+  });
+});
+
+
+describe("normalizeTicket", () => {
+  it("joins a ticket number the rep spelled out", () => {
+    expect(normalizeTicket("a r 5 3 7 8 4 3 7")).toBe("AR5378437");
+    expect(normalizeTicket("P F - 8 8 2 1 3")).toBe("PF88213");
+  });
+  it("keeps a ticket that was already written normally", () => {
+    expect(normalizeTicket("PF-88213")).toBe("PF-88213");
+    expect(normalizeTicket(undefined)).toBeUndefined();
   });
 });

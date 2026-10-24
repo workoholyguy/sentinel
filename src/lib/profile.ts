@@ -10,7 +10,7 @@ export const demoProfile: ProviderProfile = {
   },
   customerName: "Omar Madjitov",
   accountNumber: "4471-2290",
-  serviceAddress: "817 W Peachtree St NW, Suite E-100, Atlanta, GA 30308",
+  serviceAddress: "817 West Peachtree Street Northwest, Suite 100, Atlanta, Georgia 30308",
   planName: "Business Fiber 500",
   monthlyPriceUsd: 129,
   get callbackNumber() {

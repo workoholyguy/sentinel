@@ -122,6 +122,13 @@ export function mapTranscript(call: VapiCall): CallTurn[] {
   return turns;
 }
 
+/** Reps read tickets out loud ("a r 5 3 7…"); show them the way they're written ("AR537…"). */
+export function normalizeTicket(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const spelled = /^([a-z0-9][\s.-]+)+[a-z0-9]$/i.test(raw);
+  return spelled ? raw.replace(/[\s.-]+/g, "").toUpperCase() : raw.toUpperCase();
+}
+
 export function mapOutcome(call: VapiCall): CallOutcome | undefined {
   const data = call.analysis?.structuredData ?? {};
   const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
@@ -131,7 +138,7 @@ export function mapOutcome(call: VapiCall): CallOutcome | undefined {
   };
   const summary = str(data.summary) ?? str(call.analysis?.summary);
   const outcome: CallOutcome = {
-    ticketNumber: str(data.ticketNumber),
+    ticketNumber: normalizeTicket(str(data.ticketNumber)),
     creditUsd: num(data.creditUsd),
     technicianWindow: str(data.technicianWindow),
     summary: summary ?? "",
