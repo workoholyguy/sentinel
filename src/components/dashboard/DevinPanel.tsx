@@ -12,7 +12,7 @@ function repairSteps(r: RepairState): { label: string; detail: string; state: St
     return [
       { label: "Queued offline", detail: "Saved with the evidence — no internet right now", state: "current" },
       { label: "Writing the repair", detail: "Starts the moment a connection is back", state: "todo" },
-      { label: "Pull request opened", detail: "Sentinel loads it on the next fault", state: "todo" },
+      { label: "Pull request opened", detail: "Uplink loads it on the next fault", state: "todo" },
     ];
   }
   const failed = r.status === "failed" || r.status === "blocked";
@@ -20,7 +20,7 @@ function repairSteps(r: RepairState): { label: string; detail: string; state: St
   return [
     { label: "Brief sent", detail: "Fault, live probe evidence and the plugin contract", state: "done" },
     { label: "Writing the repair", detail: "A new fix plugin plus tests, in a cloud session", state: writing },
-    { label: "Pull request opened", detail: "Sentinel loads it on the next fault", state: r.status === "finished" ? "done" : "todo" },
+    { label: "Pull request opened", detail: "Uplink loads it on the next fault", state: r.status === "finished" ? "done" : "todo" },
   ];
 }
 

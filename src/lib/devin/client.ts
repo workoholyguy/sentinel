@@ -18,7 +18,7 @@ export interface DevinClientOptions {
   /** When set, uses the v3 organization API; otherwise the v1 API. */
   orgId?: string;
   fetchImpl?: FetchLike;
-  /** Per-request timeout; a lossy network must not hang Sentinel. Default 10 s. */
+  /** Per-request timeout; a lossy network must not hang Uplink. Default 10 s. */
   timeoutMs?: number;
 }
 

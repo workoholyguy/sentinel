@@ -1,4 +1,4 @@
-// In-memory state for the single Sentinel process (one laptop, one network).
+// In-memory state for the single Uplink process (one laptop, one network).
 import type { Incident, Snapshot } from "./types";
 import { healthySnapshot } from "./mock";
 

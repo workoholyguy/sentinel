@@ -33,10 +33,10 @@ export function buildRepairBrief(input: RepairBriefInput): string {
   const faultText = String(fault);
 
   const lines: string[] = [
-    "You are writing a repair plugin for Sentinel, an AI that watches a small office network, diagnoses outages with an on-device model and fixes them with repair plugins.",
+    "You are writing a repair plugin for Uplink, an AI that watches a small office network, diagnoses outages with an on-device model and fixes them with repair plugins.",
     failedFixes.length
-      ? "Sentinel's existing repair plugins ran for this fault and did not fix it. Write ONE new plugin that does."
-      : "Sentinel hit a fault that no existing repair plugin handles. Write ONE new plugin that fixes it.",
+      ? "Uplink's existing repair plugins ran for this fault and did not fix it. Write ONE new plugin that does."
+      : "Uplink hit a fault that no existing repair plugin handles. Write ONE new plugin that fixes it.",
     "",
     "## Repository",
     `- Repo: ${repo} (branch off main)`,

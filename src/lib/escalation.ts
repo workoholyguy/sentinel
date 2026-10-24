@@ -3,7 +3,7 @@ type Env = Record<string, string | undefined>;
 
 export const DEFAULT_CALL_AFTER_SECONDS = 180;
 
-/** Seconds a provider outage must last before Sentinel calls. Simulated (demo) outages call at once. */
+/** Seconds a provider outage must last before Uplink calls. Simulated (demo) outages call at once. */
 export function callDelaySeconds(simulated: boolean, env: Env = process.env): number {
   if (simulated) return 0;
   const n = Number(env.SENTINEL_CALL_AFTER_SECONDS);

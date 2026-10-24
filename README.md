@@ -1,6 +1,6 @@
-# Sentinel
+# Uplink
 
-**Your network's advocate.** When the internet breaks, Sentinel finds where it broke, explains it in plain
+**Your network's advocate.** When the internet breaks, Uplink finds where it broke, explains it in plain
 English with a model running on your laptop, tries the fixes on your side — and when it's your provider's
 fault, **it phones their support line for you**, argues with the evidence, and comes back with a ticket.
 
@@ -10,7 +10,7 @@ Built at the Devin Hackathon, Hackerhouse @ GT, 2026-10-24.
 
 When the internet goes down you lose the tools you'd use to fix it: no search, no chat support, no cloud AI.
 You end up rebooting the router, then waiting on hold to tell a script reader what you already know.
-Sentinel does both jobs, and everything up to the phone call works **with no internet at all**.
+Uplink does both jobs, and everything up to the phone call works **with no internet at all**.
 
 ## What it does
 
@@ -40,18 +40,18 @@ plugins, the call agent, the dashboard, and the Devin runtime client — against
 `omadjitov1`, the git identity on the Devin machines, each co-authored by Devin AI) plus the repair Devin
 opened at runtime are 4,796 of the 6,596 lines committed here (~73%; lockfile and scaffold excluded).
 
-**Devin is inside it.** When Sentinel meets a fault its playbook can't fix, it calls the Devin API with the
+**Devin is inside it.** When Uplink meets a fault its playbook can't fix, it calls the Devin API with the
 probe evidence — plus the local model's explanation once it's ready, and any fixes that really ran and failed.
 Devin writes the repair and opens a PR, and the dashboard follows the session live. Example:
 [#1 · repair: ipv6 blackhole](https://github.com/workoholyguy/sentinel/pull/1) — from the dashboard's
 simulated IPv6-blackhole fault, Devin wrote a 187-line plugin with 10 tests and opened the PR about
-2½ minutes after Sentinel sent the report. It's merged into `main`; Sentinel loads it at runtime on Node 22.18+.
+2½ minutes after Uplink sent the report. It's merged into `main`; Uplink loads it at runtime on Node 22.18+.
 
 ## Run it (macOS)
 
 ```bash
 pnpm install
-pnpm sentinel   # starts Sentinel and opens it as its own Chrome/Edge/Brave/Arc app window
+pnpm sentinel   # starts Uplink and opens it as its own Chrome/Edge/Brave/Arc app window
 ```
 
 Needs [Ollama](https://ollama.com) with `llama3.2:3b` for the on-device explanations. Add `FULLSCREEN=1` for a
@@ -63,7 +63,7 @@ real pipeline on it: **Simulate ISP outage** (→ the call) and **Unknown fault*
 | Variable | What it switches |
 |---|---|
 | `VAPI_API_KEY`, `VAPI_PHONE_NUMBER_ID`, `SENTINEL_SUPPORT_NUMBER` | Real phone calls (all three needed; otherwise a scripted call) |
-| `SENTINEL_CALL_AFTER_SECONDS` | How long a real provider outage must last before Sentinel calls (default 180; simulated outages call at once) |
+| `SENTINEL_CALL_AFTER_SECONDS` | How long a real provider outage must last before Uplink calls (default 180; simulated outages call at once) |
 | `DEVIN_API_KEY`, `DEVIN_ORG_ID` | Real Devin repair sessions (`DEVIN_MOCK=1` for a 30 s simulated one) |
 | `DEVIN_MAX_ACU`, `SENTINEL_REPO` | Spend cap per Devin session (default 8); repo Devin opens PRs on |
 | `SENTINEL_DRY_RUN=0`, `SENTINEL_SUDO=1` | Let repair plugins change the system; run them via passwordless `sudo -n` (DNS flush and DHCP renew need root) |
@@ -72,7 +72,7 @@ real pipeline on it: **Simulate ISP outage** (→ the call) and **Unknown fault*
 ## Honest limits
 
 - Repair plugins **rehearse** by default; router reboot is simulated.
-- The call and Devin need *some* way out when the ISP is fully down (e.g. a phone hotspot) — Sentinel doesn't
+- The call and Devin need *some* way out when the ISP is fully down (e.g. a phone hotspot) — Uplink doesn't
   switch to a backup uplink by itself yet.
 - The diagnosis rules don't detect an IPv6 blackhole on a real network yet; the Devin demo injects that fault.
 - Runtime-loaded `.ts` repair plugins need Node 22.18+ (native TypeScript); on Node 20 they're skipped.

@@ -40,7 +40,7 @@ export function buildCallRequest(incident: Incident, profile: ProviderProfile, p
     customer: { number: profile.supportNumber, name: `${profile.providerName} support` },
     metadata: { incidentId: incident.id },
     assistant: {
-      name: "Sentinel provider call",
+      name: "Uplink provider call",
       firstMessage,
       firstMessageMode: "assistant-speaks-first",
       model: {
@@ -204,7 +204,7 @@ export function buildDebriefRequest(incident: Incident, profile: ProviderProfile
     customer: { number: customerNumber, name: profile.customerName },
     metadata: { incidentId: incident.id, kind: "debrief" },
     assistant: {
-      name: "Sentinel customer update",
+      name: "Uplink customer update",
       firstMessage,
       firstMessageMode: "assistant-speaks-first",
       model: {

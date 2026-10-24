@@ -38,7 +38,7 @@ const duration = (hours: number) => {
   return `about ${Math.round(hours)} hours`;
 };
 
-/** Steps the customer (or Sentinel) already took, with times — the answer to "have you tried restarting?". */
+/** Steps the customer (or Uplink) already took, with times — the answer to "have you tried restarting?". */
 function alreadyTried(incident: Incident): string[] {
   const fromFixes = incident.fixes
     .filter((f) => f.actions.length)
@@ -104,9 +104,9 @@ If the rep cannot help with something, ask once for an alternative, then move on
 export function buildDebriefPrompt(incident: Incident, profile: ProviderProfile): { systemPrompt: string; firstMessage: string } {
   const o = incident.call?.outcome;
   const first = profile.customerName.split(" ")[0];
-  const firstMessage = `Hi ${first}, it's Sentinel, your network assistant. I just got off the phone with ${profile.providerName} about your internet. Do you have a minute?`;
+  const firstMessage = `Hi ${first}, it's Uplink, your network assistant. I just got off the phone with ${profile.providerName} about your internet. Do you have a minute?`;
   const facts = [
-    `What Sentinel measured: ${incident.diagnosis?.summary ?? "the connection to the provider was down"}.`,
+    `What Uplink measured: ${incident.diagnosis?.summary ?? "the connection to the provider was down"}.`,
     o?.cause ? `What ${profile.providerName} says is wrong: ${o.cause}.` : "",
     o?.summary ? `What they agreed to: ${o.summary}` : "",
     o?.ticketNumber ? `Ticket number: ${o.ticketNumber}.` : "No ticket number was given.",
@@ -114,7 +114,7 @@ export function buildDebriefPrompt(incident: Incident, profile: ProviderProfile)
     o?.creditUsd ? `Credit applied: $${o.creditUsd.toFixed(2)}.` : "No credit was applied.",
     o?.customerAction ? `What ${first} needs to do: ${o.customerAction}.` : `${first} doesn't need to do anything.`,
   ].filter(Boolean);
-  const systemPrompt = `You are Sentinel, ${first}'s network assistant, calling ${first} back after you phoned their internet provider, ${profile.providerName}, for them.
+  const systemPrompt = `You are Uplink, ${first}'s network assistant, calling ${first} back after you phoned their internet provider, ${profile.providerName}, for them.
 You are an AI; if asked, say so.
 
 STYLE: a short, warm phone call. Spoken sentences, one idea at a time, no lists or markdown. Say numbers clearly; read ticket numbers character by character.

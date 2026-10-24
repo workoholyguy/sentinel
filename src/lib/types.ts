@@ -1,4 +1,4 @@
-// Sentinel shared contracts. Every slice builds against these types.
+// Uplink shared contracts. Every slice builds against these types.
 // Owned by the integrator. Devin slices must NOT edit this file;
 // if a slice needs a change, note it in the PR description instead.
 
@@ -121,7 +121,7 @@ export interface CallState {
   outcome?: CallOutcome;
 }
 
-/** A Devin session Sentinel started to write a repair plugin for a fault it couldn't fix. */
+/** A Devin session Uplink started to write a repair plugin for a fault it couldn't fix. */
 export interface RepairState {
   id: string;
   url: string; // the live Devin session
@@ -140,7 +140,7 @@ export interface Incident {
   fixes: FixResult[];
   call?: CallState;
   debrief?: CallState; // the follow-up call that tells the customer what the provider said
-  repair?: RepairState; // set when Sentinel asked Devin to write a new fix
+  repair?: RepairState; // set when Uplink asked Devin to write a new fix
   timeline: TimelineEvent[];
 }
 

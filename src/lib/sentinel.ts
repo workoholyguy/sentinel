@@ -1,4 +1,4 @@
-// The Sentinel loop: watch → diagnose (on-device) → fix → if it's the provider's fault, call them.
+// The Uplink loop: watch → diagnose (on-device) → fix → if it's the provider's fault, call them.
 // One tick every ~1.5 s, started lazily by the first API request.
 import type { Incident, Snapshot } from "./types";
 import { state, now, log } from "./store";
@@ -23,7 +23,7 @@ function injected(): Snapshot | null {
   return null;
 }
 
-// A fault Sentinel has no repair plugin for — the trigger for asking Devin to write one.
+// A fault Uplink has no repair plugin for — the trigger for asking Devin to write one.
 function ipv6Snapshot(): Snapshot {
   const base = ispOutageSnapshot;
   return {
@@ -168,7 +168,7 @@ async function tick() {
       } else if (DRY_RUN && !inc.simulated) {
         // Dry-run fixes were only rehearsed, so "they failed" isn't true — don't send Devin after them.
         inc.status = "needs_human";
-        log(inc, "info", "Dry run: the playbook was rehearsed, not applied — needs a human (SENTINEL_DRY_RUN=0 lets Sentinel act)");
+        log(inc, "info", "Dry run: the playbook was rehearsed, not applied — needs a human (SENTINEL_DRY_RUN=0 lets Uplink act)");
       } else {
         // The playbook really ran and didn't fix a fault that's ours: Devin writes a better repair.
         log(inc, "fix", "The playbook didn't fix it — asking Devin to write a better repair");

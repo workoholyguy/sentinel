@@ -1,6 +1,6 @@
 // The on-device brain. Talks to a local model through an OpenAI-compatible API
 // (Ollama today; Atlas exposes the same API, so it's a one-line swap via LOCAL_LLM_URL).
-// No cloud: this keeps working when the internet is down — which is exactly when Sentinel is needed.
+// No cloud: this keeps working when the internet is down — which is exactly when Uplink is needed.
 import type { Diagnosis } from "./types";
 
 const BASE = process.env.LOCAL_LLM_URL ?? "http://127.0.0.1:11434/v1";

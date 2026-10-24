@@ -1,6 +1,6 @@
-# Sentinel — rules for every Devin session
+# Uplink — rules for every Devin session
 
-**Sentinel is your network's advocate.** It watches the network, diagnoses outages with a LOCAL model
+**Uplink is your network's advocate.** It watches the network, diagnoses outages with a LOCAL model
 (it keeps working when the internet is down), fixes what it can, and when the internet provider is at
 fault it **calls the provider's support line for you** with evidence and gets a ticket + credit.
 

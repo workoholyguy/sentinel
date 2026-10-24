@@ -32,7 +32,7 @@ export class DevinUnreachableError extends Error {
   }
 }
 
-/** True when Sentinel can ask Devin for repairs at all (a key, or the mock). */
+/** True when Uplink can ask Devin for repairs at all (a key, or the mock). */
 export function devinConfigured(env: Record<string, string | undefined> = process.env): boolean {
   return isMock(env) || Boolean(env.DEVIN_API_KEY?.trim());
 }
@@ -69,7 +69,7 @@ function clientOptions(env: Record<string, string | undefined>, fetchImpl?: Fetc
 }
 
 function repairTitle(input: RepairBriefInput): string {
-  return `Sentinel repair: ${String(input.fault)} (${input.platform})`;
+  return `Uplink repair: ${String(input.fault)} (${input.platform})`;
 }
 
 function mockStatus(entry: MockEntry, now: number): RepairSession {
@@ -88,7 +88,7 @@ function mockStatus(entry: MockEntry, now: number): RepairSession {
 
 /**
  * Asks Devin to write a repair plugin for a fault no existing plugin handles.
- * Returns null (and logs why) when Devin is not configured, so Sentinel keeps running.
+ * Returns null (and logs why) when Devin is not configured, so Uplink keeps running.
  */
 export async function requestRepair(input: RepairBriefInput, deps: RequestRepairDeps = {}): Promise<RepairSession | null> {
   const env = deps.env ?? process.env;

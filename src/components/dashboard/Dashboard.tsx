@@ -77,7 +77,7 @@ function Header({ data, connected, now }: { data: StatusResponse | null; connect
           <span className="h-3 w-3 rounded-full bg-accent shadow-[0_0_18px_#38e1ff]" />
         </div>
         <div>
-          <div className="font-mono text-[15px] font-semibold tracking-[0.42em] text-white">SENTINEL</div>
+          <div className="font-mono text-[15px] font-semibold tracking-[0.42em] text-white">UPLINK</div>
           <div className="text-[13px] text-white/40">
             Network mission control{data ? ` · ${data.profile.planName} · ${data.profile.providerName}` : ""}
           </div>
@@ -114,7 +114,7 @@ function Boot() {
     <div className="flex flex-1 items-center justify-center">
       <div className="flex items-center gap-3 font-mono text-sm uppercase tracking-label text-white/40">
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
-        Connecting to Sentinel
+        Connecting to Uplink
       </div>
     </div>
   );
