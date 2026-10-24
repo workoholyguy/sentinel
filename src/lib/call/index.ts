@@ -1,0 +1,37 @@
+// Facade: real Vapi call when configured, otherwise the scripted mock.
+import type { CallState, Incident, ProviderProfile } from "../types";
+import { createMockCall, type MockCall } from "./mock";
+import { getCallState, startProviderCall } from "./vapi";
+
+type Env = Record<string, string | undefined>;
+
+const mockCalls = new Map<string, MockCall>();
+
+function vapiConfig(env: Env) {
+  const apiKey = env.VAPI_API_KEY;
+  const phoneNumberId = env.VAPI_PHONE_NUMBER_ID;
+  return apiKey && phoneNumberId ? { apiKey, phoneNumberId } : null;
+}
+
+export function isLiveCalling(env: Env = process.env): boolean {
+  return vapiConfig(env) !== null;
+}
+
+export async function startCall(incident: Incident, profile: ProviderProfile, env: Env = process.env): Promise<CallState> {
+  const cfg = vapiConfig(env);
+  if (cfg) return startProviderCall({ incident, profile, ...cfg });
+  const call = createMockCall(incident, profile);
+  mockCalls.set(call.id, call);
+  return call.state();
+}
+
+export async function getCall(id: string, env: Env = process.env): Promise<CallState> {
+  const mock = mockCalls.get(id);
+  if (mock) return mock.state();
+  const cfg = vapiConfig(env);
+  if (!cfg) throw new Error(`Unknown call ${id}`);
+  return getCallState(id, { apiKey: cfg.apiKey });
+}
+
+export { buildAgentPrompt, computeCredit } from "./prompt";
+export { createMockCall } from "./mock";
