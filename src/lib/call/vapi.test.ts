@@ -1,0 +1,124 @@
+import { describe, expect, it, vi } from "vitest";
+import { callingIncident } from "../mock";
+import { demoProfile } from "../profile";
+import { getCallState, mapStatus, startProviderCall } from "./vapi";
+
+function fakeFetch(body: unknown, status = 200) {
+  return vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () => new Response(JSON.stringify(body), { status }));
+}
+
+const created = { id: "vapi_123", status: "queued", createdAt: "2026-10-24T13:00:00.000Z", customer: { number: demoProfile.supportNumber } };
+
+describe("startProviderCall", () => {
+  it("POSTs a transient assistant to /call with auth, phone number and customer", async () => {
+    const fetchImpl = fakeFetch(created, 201);
+    const state = await startProviderCall({ incident: callingIncident, profile: demoProfile, apiKey: "key_abc", phoneNumberId: "pn_1", fetchImpl });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("https://api.vapi.ai/call");
+    expect(init?.method).toBe("POST");
+    expect((init?.headers as Record<string, string>).Authorization).toBe("Bearer key_abc");
+
+    const body = JSON.parse(String(init?.body));
+    expect(body.phoneNumberId).toBe("pn_1");
+    expect(body.customer.number).toBe(demoProfile.supportNumber);
+    expect(body.assistant.firstMessage).toMatch(/AI assistant/);
+    expect(body.assistant.model.messages[0].role).toBe("system");
+    expect(body.assistant.model.messages[0].content).toContain(demoProfile.accountNumber);
+    expect(body.assistant.model.tools).toContainEqual({ type: "endCall" });
+    expect(body.assistant.voice.provider).toBeTruthy();
+    expect(Object.keys(body.assistant.analysisPlan.structuredDataSchema.properties)).toEqual(
+      expect.arrayContaining(["ticketNumber", "creditUsd", "technicianWindow", "summary"]),
+    );
+
+    expect(state).toMatchObject({ id: "vapi_123", status: "queued", to: demoProfile.supportNumber, transcript: [] });
+    expect(state.outcome).toBeUndefined();
+  });
+
+  it("throws with the Vapi error body on failure", async () => {
+    const fetchImpl = fakeFetch({ message: "phoneNumberId invalid" }, 400);
+    await expect(
+      startProviderCall({ incident: callingIncident, profile: demoProfile, apiKey: "k", phoneNumberId: "bad", fetchImpl }),
+    ).rejects.toThrow(/400.*phoneNumberId invalid/);
+  });
+});
+
+describe("mapStatus", () => {
+  it.each([
+    ["scheduled", undefined, "queued"],
+    ["queued", undefined, "queued"],
+    ["ringing", undefined, "ringing"],
+    ["in-progress", undefined, "in-progress"],
+    ["forwarding", undefined, "in-progress"],
+    ["ended", "assistant-ended-call", "ended"],
+    ["ended", "customer-ended-call", "ended"],
+    ["ended", "customer-did-not-answer", "failed"],
+    ["ended", "pipeline-error-openai-llm-failed", "failed"],
+  ] as const)("%s (%s) → %s", (status, reason, expected) => {
+    expect(mapStatus(status, reason)).toBe(expected);
+  });
+});
+
+describe("getCallState", () => {
+  const ended = {
+    id: "vapi_123",
+    status: "ended",
+    endedReason: "assistant-ended-call",
+    startedAt: "2026-10-24T13:00:00.000Z",
+    endedAt: "2026-10-24T13:04:00.000Z",
+    customer: { number: "+15555550100" },
+    messages: [
+      { role: "system", message: "You are an AI assistant...", time: 1, secondsFromStart: 0 },
+      { role: "bot", message: "Hi, I'm an AI assistant calling on behalf of Omar.", secondsFromStart: 1 },
+      { role: "user", message: "Have you tried restarting your modem?", time: Date.parse("2026-10-24T13:00:10.000Z"), secondsFromStart: 10 },
+      { role: "tool_calls", message: "" },
+      { role: "bot", message: "Yes, at 12:58. Loss persisted.", secondsFromStart: 14 },
+    ],
+    analysis: {
+      summary: "Provider opened a ticket.",
+      structuredData: { ticketNumber: "PF-88213", creditUsd: 4.3, technicianWindow: "today 3–5 PM", summary: "Ticket, tech and credit." },
+    },
+  };
+
+  it("GETs /call/{id} and maps transcript and outcome", async () => {
+    const fetchImpl = fakeFetch(ended);
+    const state = await getCallState("vapi_123", { apiKey: "key_abc", fetchImpl });
+
+    expect(fetchImpl.mock.calls[0][0]).toBe("https://api.vapi.ai/call/vapi_123");
+    expect(state.status).toBe("ended");
+    expect(state.endedAt).toBe(ended.endedAt);
+    expect(state.transcript).toEqual([
+      { at: "2026-10-24T13:00:01.000Z", speaker: "agent", text: "Hi, I'm an AI assistant calling on behalf of Omar." },
+      { at: "2026-10-24T13:00:10.000Z", speaker: "rep", text: "Have you tried restarting your modem?" },
+      { at: "2026-10-24T13:00:14.000Z", speaker: "agent", text: "Yes, at 12:58. Loss persisted." },
+    ]);
+    expect(state.outcome).toEqual({ ticketNumber: "PF-88213", creditUsd: 4.3, technicianWindow: "today 3–5 PM", summary: "Ticket, tech and credit." });
+  });
+
+  it("falls back to artifact.messages and analysis.summary, and parses '$4.30'", async () => {
+    const { messages, ...rest } = ended;
+    const fetchImpl = fakeFetch({
+      ...rest,
+      artifact: { messages },
+      analysis: { summary: "Provider opened a ticket.", structuredData: { ticketNumber: "PF-1", creditUsd: "$4.30" } },
+    });
+    const state = await getCallState("vapi_123", { apiKey: "k", fetchImpl });
+    expect(state.transcript).toHaveLength(3);
+    expect(state.outcome).toEqual({ ticketNumber: "PF-1", creditUsd: 4.3, technicianWindow: undefined, summary: "Provider opened a ticket." });
+  });
+
+  it("has no outcome while the call is in progress", async () => {
+    const fetchImpl = fakeFetch({ ...ended, status: "in-progress", endedAt: undefined });
+    const state = await getCallState("vapi_123", { apiKey: "k", fetchImpl });
+    expect(state.status).toBe("in-progress");
+    expect(state.outcome).toBeUndefined();
+  });
+
+  it("reports why a call failed", async () => {
+    const fetchImpl = fakeFetch({ ...ended, endedReason: "customer-busy", messages: [], analysis: undefined });
+    const state = await getCallState("vapi_123", { apiKey: "k", fetchImpl });
+    expect(state.status).toBe("failed");
+    expect(state.outcome?.summary).toMatch(/customer-busy/);
+  });
+});
