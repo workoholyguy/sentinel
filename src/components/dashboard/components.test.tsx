@@ -50,6 +50,18 @@ describe("CallPanel", () => {
     expect(screen.queryByTestId("outcome")).toBeNull();
   });
 
+  it("leads with the ticket when the provider gave no credit", () => {
+    const ended: CallState = {
+      ...callingIncident.call!,
+      status: "ended",
+      outcome: { ticketNumber: "AR5378437", technicianWindow: "about 2 hours", summary: "Outage confirmed." },
+    };
+    render(<CallPanel call={ended} provider="Peachtree Fiber" now={Date.now()} />);
+    expect(screen.getByTestId("outcome-ticket").textContent).toBe("AR5378437");
+    expect(screen.queryByTestId("outcome-credit")).toBeNull();
+    expect(screen.getByText("None offered")).toBeTruthy();
+  });
+
   it("celebrates the outcome", () => {
     const ended: CallState = {
       ...callingIncident.call!,

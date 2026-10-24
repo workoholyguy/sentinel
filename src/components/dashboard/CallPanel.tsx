@@ -148,6 +148,7 @@ const CONFETTI = Array.from({ length: 22 }, (_, i) => ({
 
 function OutcomeCard({ call, provider }: { call: CallState; provider: string }) {
   const o = call.outcome!;
+  const credit = o.creditUsd && o.creditUsd > 0 ? o.creditUsd : null;
   return (
     <motion.div
       initial={{ opacity: 0, height: 0 }}
@@ -184,29 +185,40 @@ function OutcomeCard({ call, provider }: { call: CallState; provider: string }) 
           </div>
         </div>
         <div className="mt-6 grid grid-cols-[1.1fr_1fr] gap-5">
-          <div>
+          {/* The headline is the credit when there is one, otherwise the ticket the rep opened. */}
+          <div className="min-w-0">
             <div className="label flex items-center gap-1.5">
-              <CircleDollarSign className="h-3.5 w-3.5" /> Credit secured
+              {credit ? <CircleDollarSign className="h-3.5 w-3.5" /> : <Ticket className="h-3.5 w-3.5" />}
+              {credit ? "Credit secured" : "Ticket opened"}
             </div>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
-              className="mt-1 text-[72px] font-semibold leading-none tracking-tighter text-ok tabular"
-              data-testid="outcome-credit"
+              className={`mt-1 font-semibold leading-none tracking-tighter text-ok tabular ${credit ? "text-[72px]" : "break-all font-mono text-[40px]"}`}
+              data-testid={credit ? "outcome-credit" : "outcome-ticket"}
             >
-              {formatUsd(o.creditUsd ?? 0)}
+              {credit ? formatUsd(credit) : (o.ticketNumber ?? "—")}
             </motion.div>
           </div>
-          <div className="space-y-4">
-            <div>
-              <div className="label flex items-center gap-1.5">
-                <Ticket className="h-3.5 w-3.5" /> Ticket
+          <div className="min-w-0 space-y-4">
+            {credit ? (
+              <div>
+                <div className="label flex items-center gap-1.5">
+                  <Ticket className="h-3.5 w-3.5" /> Ticket
+                </div>
+                <div className="mt-1 break-all font-mono text-[26px] font-medium tracking-tight text-white" data-testid="outcome-ticket">
+                  {o.ticketNumber ?? "—"}
+                </div>
               </div>
-              <div className="mt-1 font-mono text-[26px] font-medium tracking-tight text-white" data-testid="outcome-ticket">
-                {o.ticketNumber ?? "—"}
+            ) : (
+              <div>
+                <div className="label flex items-center gap-1.5">
+                  <CircleDollarSign className="h-3.5 w-3.5" /> Credit
+                </div>
+                <div className="mt-1 text-[18px] font-medium text-white/60">None offered</div>
               </div>
-            </div>
+            )}
             <div>
               <div className="label flex items-center gap-1.5">
                 <CalendarClock className="h-3.5 w-3.5" /> Technician
