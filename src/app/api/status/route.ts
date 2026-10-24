@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
-import { mockStatus } from "@/lib/mock";
 import type { StatusResponse } from "@/lib/types";
+import { state } from "@/lib/store";
+import { ensureRunning } from "@/lib/sentinel";
+import { demoProfile } from "@/lib/profile";
 
-// Integrator-owned. Returns mock data until the orchestrator is wired in.
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const body: StatusResponse = { ...mockStatus, snapshot: { ...mockStatus.snapshot, at: new Date().toISOString() } };
+  ensureRunning();
+  const s = state();
+  const body: StatusResponse = { snapshot: s.snapshot, incident: s.incident, history: s.history.slice(0, 10), profile: demoProfile };
   return NextResponse.json(body);
 }
