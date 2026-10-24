@@ -1,8 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { FlaskConical } from "lucide-react";
-import type { Incident, StatusResponse } from "../../lib/types";
+import { FlaskConical, PhoneOutgoing } from "lucide-react";
+import type { CallState, Incident, StatusResponse } from "../../lib/types";
 import { CallPanel } from "./CallPanel";
 import { DemoControls } from "./DemoControls";
 import { DevinPanel } from "./DevinPanel";
@@ -19,7 +19,13 @@ export function Dashboard() {
   const { data, connected } = poll;
   const now = useNow();
   const incident = data?.incident ?? null;
-  const mood = !incident ? "calm" : incident.status === "needs_human" ? "warn" : isTerminal(incident.status) ? "good" : "alert";
+  const mood = !incident
+    ? "calm"
+    : incident.status === "needs_human"
+      ? "warn"
+      : isTerminal(incident.status) || incident.status === "informing"
+        ? "good"
+        : "alert";
 
   return (
     <main className="relative h-screen w-screen overflow-hidden" style={{ ["--ambient" as string]: AMBIENT[mood] }}>
@@ -162,6 +168,7 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
   const end = ended ?? now;
   const done = isTerminal(incident.status);
   const human = incident.status === "needs_human";
+  const informing = incident.status === "informing";
   const escalated = isEscalated(incident);
   const call = incident.call;
 
@@ -172,9 +179,17 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2.5">
-                <span className={`h-2.5 w-2.5 rounded-full ${human ? "bg-warn" : done ? "bg-ok" : "alarm bg-bad"}`} />
-                <span className={`label ${human ? "!text-warn/90" : done ? "!text-ok/80" : "!text-bad/90"}`}>
-                  {human ? "Needs a human" : done ? (incident.status === "ticketed" ? "Escalated · ticket open" : "Resolved") : "Active incident"}
+                <span className={`h-2.5 w-2.5 rounded-full ${human ? "bg-warn" : done || informing ? "bg-ok" : "alarm bg-bad"}`} />
+                <span className={`label ${human ? "!text-warn/90" : done || informing ? "!text-ok/80" : "!text-bad/90"}`}>
+                  {human
+                    ? "Needs a human"
+                    : informing
+                      ? `Ticket open · updating ${data.profile.customerName.split(" ")[0]}`
+                      : done
+                        ? incident.status === "ticketed"
+                          ? "Escalated · ticket open"
+                          : "Resolved"
+                        : "Active incident"}
                 </span>
               </div>
               <h1 className="mt-2 text-[44px] font-semibold leading-none tracking-[-0.035em]">{incidentTitle(incident)}</h1>
@@ -197,6 +212,7 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
           <DiagnosisCard diagnosis={incident.diagnosis} />
           <div className="flex min-h-0 flex-col gap-6">
             <FixesList fixes={incident.fixes} status={incident.status} devin={Boolean(incident.repair)} />
+            {incident.debrief && <CustomerUpdate call={incident.debrief} name={data.profile.customerName} cause={call?.outcome?.cause} action={call?.outcome?.customerAction} />}
             {call && <Timeline events={incident.timeline} startedAt={incident.startedAt} className="flex-1" />}
             {!call && <HistoryList items={data.history} now={now} className="flex-1" />}
           </div>
@@ -222,5 +238,28 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
         )}
       </div>
     </div>
+  );
+}
+
+// The follow-up call that tells the customer what the provider said.
+function CustomerUpdate({ call, name, cause, action }: { call: CallState; name: string; cause?: string; action?: string }) {
+  const first = name.split(" ")[0];
+  const done = call.status === "ended";
+  const failed = call.status === "failed";
+  return (
+    <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="panel p-6" data-testid="customer-update">
+      <div className="flex items-center gap-2.5">
+        <PhoneOutgoing className={`h-4 w-4 ${failed ? "text-warn" : "text-accent"} ${done || failed ? "" : "animate-pulse"}`} />
+        <span className="label">Customer update</span>
+      </div>
+      <div className="mt-2 text-[17px] font-medium text-white/90">
+        {done ? `${first} is up to date` : failed ? `Couldn't reach ${first}` : `Calling ${first} with the update…`}
+      </div>
+      {(cause || action) && (
+        <div className="mt-1 text-[13px] leading-snug text-white/50">
+          {cause ? `Cause: ${cause}.` : ""} {action ? `Needs to: ${action}.` : ""}
+        </div>
+      )}
+    </motion.section>
   );
 }

@@ -1,6 +1,6 @@
 // Places and follows the provider call through Vapi (https://docs.vapi.ai).
 import type { CallOutcome, CallState, CallStatus, CallTurn, Incident, ProviderProfile } from "../types";
-import { buildAgentPrompt } from "./prompt";
+import { buildAgentPrompt, buildDebriefPrompt } from "./prompt";
 
 export const VAPI_BASE_URL = "https://api.vapi.ai";
 
@@ -27,6 +27,8 @@ export const outcomeSchema = {
     creditUsd: { type: "number", description: "Credit in US dollars the rep agreed to apply; omit if none" },
     technicianWindow: { type: "string", description: "Technician visit window or ETA for the fix, e.g. 'today 3–5 PM'" },
     summary: { type: "string", description: "One or two sentences: what the provider agreed to do" },
+    cause: { type: "string", description: "What the rep said is causing the problem, e.g. 'area outage' or 'account suspended for an unpaid bill'" },
+    customerAction: { type: "string", description: "What the customer has to do, if anything, e.g. 'pay the overdue $129 bill'; omit if nothing" },
   },
   required: ["summary"],
 } as const;
@@ -56,7 +58,7 @@ export function buildCallRequest(incident: Incident, profile: ProviderProfile, p
       analysisPlan: {
         summaryPrompt: "Summarize in 1-2 sentences what the internet provider agreed to do on this support call.",
         structuredDataPrompt:
-          "Extract the outcome of this support call: the ticket number, any credit in USD the rep agreed to, and the technician window or ETA. Only include values the rep actually stated.",
+          "Extract the outcome of this support call: the ticket number, any credit in USD the rep agreed to, the technician window or ETA, what the rep said is causing the problem, and anything the customer must do (such as paying a bill). Only include values the rep actually stated.",
         structuredDataSchema: outcomeSchema,
       },
     },
@@ -142,6 +144,8 @@ export function mapOutcome(call: VapiCall): CallOutcome | undefined {
     creditUsd: num(data.creditUsd),
     technicianWindow: str(data.technicianWindow),
     summary: summary ?? "",
+    ...(str(data.cause) ? { cause: str(data.cause) } : {}),
+    ...(str(data.customerAction) ? { customerAction: str(data.customerAction) } : {}),
   };
   if (!outcome.ticketNumber && !outcome.creditUsd && !outcome.technicianWindow && !summary) return undefined;
   return outcome;
@@ -190,4 +194,44 @@ export async function startProviderCall({
 
 export async function getCallState(id: string, { apiKey, fetchImpl = fetch }: GetCallOptions): Promise<CallState> {
   return toCallState(await vapi(`/call/${encodeURIComponent(id)}`, apiKey, fetchImpl));
+}
+
+/** The follow-up call to the customer with what the provider said. */
+export function buildDebriefRequest(incident: Incident, profile: ProviderProfile, phoneNumberId: string, customerNumber: string) {
+  const { systemPrompt, firstMessage } = buildDebriefPrompt(incident, profile);
+  return {
+    phoneNumberId,
+    customer: { number: customerNumber, name: profile.customerName },
+    metadata: { incidentId: incident.id, kind: "debrief" },
+    assistant: {
+      name: "Sentinel customer update",
+      firstMessage,
+      firstMessageMode: "assistant-speaks-first",
+      model: {
+        provider: "openai",
+        model: "gpt-4o",
+        temperature: 0.3,
+        messages: [{ role: "system", content: systemPrompt }],
+        tools: [{ type: "endCall" }],
+      },
+      voice: { provider: "vapi", voiceId: "Elliot" },
+      endCallMessage: "Talk soon. Bye!",
+      silenceTimeoutSeconds: 30,
+      maxDurationSeconds: 300,
+    },
+  };
+}
+
+export async function startDebriefCall({
+  incident,
+  profile,
+  apiKey,
+  phoneNumberId,
+  customerNumber,
+  fetchImpl = fetch,
+}: StartProviderCallOptions & { customerNumber: string }): Promise<CallState> {
+  const body = buildDebriefRequest(incident, profile, phoneNumberId, customerNumber);
+  const call = await vapi("/call", apiKey, fetchImpl, { method: "POST", body: JSON.stringify(body) });
+  const state = toCallState(call);
+  return { ...state, to: state.to || customerNumber };
 }

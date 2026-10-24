@@ -5,7 +5,7 @@ import { createMonitor } from "./monitor";
 import { diagnose } from "./diagnose";
 import { fixesFor, loadExtraPlugins, registry, runFixes } from "./fixes";
 import { createExecContext } from "./fixes/exec";
-import { getCall, startCall } from "./call";
+import { getCall, startCall, startDebrief } from "./call";
 import { DevinUnreachableError, devinConfigured, getRepairStatus, peekLastRepair, requestRepair } from "./devin";
 
 const platform: "darwin" | "linux" = process.platform === "darwin" ? "darwin" : "linux";
@@ -53,6 +53,11 @@ export async function startProviderCall(incident: Incident, profile: ProviderPro
 
 export async function pollProviderCall(id: string): Promise<CallState> {
   return getCall(id);
+}
+
+/** Phone the customer with what the provider said (null when no customer number is set). */
+export async function startCustomerUpdate(incident: Incident, profile: ProviderProfile): Promise<CallState | null> {
+  return startDebrief(incident, profile);
 }
 
 // ---- Slice E: Devin at runtime ----------------------------------------------------------

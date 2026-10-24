@@ -8,7 +8,9 @@ export const demoProfile: ProviderProfile = {
   get supportNumber() {
     return process.env.SENTINEL_SUPPORT_NUMBER || "+15555550100";
   },
-  customerName: "Omar Madjitov",
+  get customerName() {
+    return process.env.SENTINEL_CUSTOMER_NAME || "Omar Madjitov";
+  },
   accountNumber: "4471-2290",
   serviceAddress: "817 West Peachtree Street Northwest, Suite 100, Atlanta, Georgia 30308",
   planName: "Business Fiber 500",

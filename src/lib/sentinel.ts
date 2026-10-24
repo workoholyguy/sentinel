@@ -6,7 +6,7 @@ import { demoProfile } from "./profile";
 import { callDelaySeconds } from "./escalation";
 import { explainLocally } from "./llm";
 import { ispOutageSnapshot } from "./mock";
-import { askDevinForFix, diagnoseSnapshot as diagnoseReal, execContext, hasFixFor, pollDevinFix, pollProviderCall, runFixesFor, sampleNetwork, startProviderCall } from "./adapters";
+import { askDevinForFix, startCustomerUpdate, diagnoseSnapshot as diagnoseReal, execContext, hasFixFor, pollDevinFix, pollProviderCall, runFixesFor, sampleNetwork, startProviderCall } from "./adapters";
 import type { Diagnosis } from "./types";
 
 const TICK_MS = 1500;
@@ -191,13 +191,34 @@ async function tick() {
       return;
     }
 
-    // 4. On the call: follow the transcript until it ends.
+    // 4. On the call: follow the transcript until it ends, then tell the customer.
     if (inc.status === "calling" && inc.call) {
       inc.call = await pollProviderCall(inc.call.id);
       if (inc.call.status === "ended" || inc.call.status === "failed") {
         const o = inc.call.outcome;
-        inc.status = "ticketed";
         log(inc, "call", o?.ticketNumber ? `Ticket ${o.ticketNumber}${o.creditUsd ? ` · $${o.creditUsd.toFixed(2)} credit` : ""}${o.technicianWindow ? ` · tech ${o.technicianWindow}` : ""}` : "Call ended");
+        if (o?.cause) log(inc, "info", `Cause per ${demoProfile.providerName}: ${o.cause}`);
+        const debrief = inc.call.status === "ended" ? await startCustomerUpdate(inc, demoProfile).catch((e) => {
+          console.error("[sentinel] customer update call failed", e);
+          return null;
+        }) : null;
+        if (debrief) {
+          inc.debrief = debrief;
+          inc.status = "informing";
+          log(inc, "call", `Calling ${demoProfile.customerName} with the update`);
+        } else {
+          inc.status = "ticketed";
+        }
+      }
+      return;
+    }
+
+    // 5. Telling the customer: follow that call until it ends.
+    if (inc.status === "informing" && inc.debrief) {
+      inc.debrief = await pollProviderCall(inc.debrief.id);
+      if (inc.debrief.status === "ended" || inc.debrief.status === "failed") {
+        inc.status = "ticketed";
+        log(inc, "call", inc.debrief.status === "ended" ? `${demoProfile.customerName} is up to date` : `Couldn't reach ${demoProfile.customerName}`);
       }
     }
   } finally {

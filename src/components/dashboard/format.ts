@@ -90,7 +90,7 @@ export function failingNode(nodes: Snapshot["nodes"]): number {
 }
 
 export const RESOLVE_PATH: IncidentStatus[] = ["detected", "diagnosing", "fixing", "resolved"];
-export const ESCALATE_PATH: IncidentStatus[] = ["detected", "diagnosing", "fixing", "escalating", "calling", "ticketed"];
+export const ESCALATE_PATH: IncidentStatus[] = ["detected", "diagnosing", "fixing", "escalating", "calling", "informing", "ticketed"];
 
 export const STEP_LABEL: Record<IncidentStatus, string> = {
   detected: "Detected",
@@ -99,6 +99,7 @@ export const STEP_LABEL: Record<IncidentStatus, string> = {
   resolved: "Resolved",
   escalating: "Escalating",
   calling: "Calling ISP",
+  informing: "Updating you",
   ticketed: "Ticketed",
   needs_human: "Needs a human",
 };

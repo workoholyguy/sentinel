@@ -84,6 +84,7 @@ export type IncidentStatus =
   | "resolved" // fixed locally
   | "escalating" // provider's fault, preparing the call
   | "calling"
+  | "informing" // support call done; phoning the customer with the update
   | "ticketed" // call finished with an outcome
   | "needs_human"; // fixes only rehearsed (dry run), or Devin unavailable / couldn't fix it
 
@@ -104,6 +105,8 @@ export interface CallOutcome {
   creditUsd?: number;
   technicianWindow?: string;
   summary: string;
+  cause?: string; // what the provider says is wrong, e.g. "area outage" or "unpaid bill"
+  customerAction?: string; // what the customer has to do, if anything, e.g. "pay the overdue $129 bill"
 }
 
 export type CallStatus = "queued" | "ringing" | "in-progress" | "ended" | "failed";
@@ -136,6 +139,7 @@ export interface Incident {
   diagnosis?: Diagnosis;
   fixes: FixResult[];
   call?: CallState;
+  debrief?: CallState; // the follow-up call that tells the customer what the provider said
   repair?: RepairState; // set when Sentinel asked Devin to write a new fix
   timeline: TimelineEvent[];
 }

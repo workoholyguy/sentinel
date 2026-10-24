@@ -60,13 +60,16 @@ describe("stepsFor", () => {
 
   it("switches to the escalation path once escalating", () => {
     const steps = stepsFor("calling");
-    expect(steps.map((s) => s.id)).toEqual(["detected", "diagnosing", "fixing", "escalating", "calling", "ticketed"]);
+    expect(steps.map((s) => s.id)).toEqual(["detected", "diagnosing", "fixing", "escalating", "calling", "informing", "ticketed"]);
     expect(steps.find((s) => s.state === "current")?.id).toBe("calling");
   });
 
   it("marks terminal steps done", () => {
     expect(stepsFor("resolved").every((s) => s.state === "done")).toBe(true);
     expect(stepsFor("ticketed").every((s) => s.state === "done")).toBe(true);
+    const updating = stepsFor("informing");
+    expect(updating.map((s) => s.id)).toContain("informing");
+    expect(updating.find((s) => s.id === "calling")?.state).toBe("done");
     const human = stepsFor("needs_human");
     expect(human.map((s) => s.id)).toEqual(["detected", "diagnosing", "fixing", "needs_human"]);
     expect(human.every((s) => s.state === "done")).toBe(true);

@@ -1,7 +1,7 @@
 // Facade: real Vapi call when configured, otherwise the scripted mock.
 import type { CallState, Incident, ProviderProfile } from "../types";
 import { createMockCall, type MockCall } from "./mock";
-import { getCallState, startProviderCall } from "./vapi";
+import { getCallState, startDebriefCall, startProviderCall } from "./vapi";
 
 type Env = Record<string, string | undefined>;
 
@@ -25,6 +25,20 @@ export async function startCall(incident: Incident, profile: ProviderProfile, en
   const call = createMockCall(incident, profile);
   mockCalls.set(call.id, call);
   return call.state();
+}
+
+/** The customer's phone for the follow-up call, when one is set (E.164). */
+export function customerNumber(env: Env = process.env): string | null {
+  const n = env.SENTINEL_CUSTOMER_NUMBER?.trim() ?? "";
+  return /^\+\d{8,15}$/.test(n) ? n : null;
+}
+
+/** Phone the customer with what the provider said. Null when there's no live calling or no customer number. */
+export async function startDebrief(incident: Incident, profile: ProviderProfile, env: Env = process.env): Promise<CallState | null> {
+  const cfg = vapiConfig(env);
+  const to = customerNumber(env);
+  if (!cfg || !to) return null;
+  return startDebriefCall({ incident, profile, ...cfg, customerNumber: to });
 }
 
 export async function getCall(id: string, env: Env = process.env): Promise<CallState> {

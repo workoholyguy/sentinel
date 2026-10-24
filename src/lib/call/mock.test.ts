@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { callingIncident } from "../mock";
 import { demoProfile } from "../profile";
 import { createMockCall, MOCK_CALL_SECONDS } from "./mock";
-import { getCall, isLiveCalling, startCall } from "./index";
+import { customerNumber, getCall, isLiveCalling, startCall, startDebrief } from "./index";
 
 const t0 = Date.parse("2026-10-24T13:00:00Z");
 const at = (s: number) => t0 + s * 1000;
@@ -53,5 +53,14 @@ describe("facade", () => {
 
   it("rejects unknown ids when Vapi is not configured", async () => {
     await expect(getCall("nope", {})).rejects.toThrow(/Unknown call/);
+  });
+});
+
+describe("customer update setup", () => {
+  it("only calls the customer with live calling and a real number", async () => {
+    expect(customerNumber({ SENTINEL_CUSTOMER_NUMBER: "+18455550123" })).toBe("+18455550123");
+    expect(customerNumber({ SENTINEL_CUSTOMER_NUMBER: "845 555 0123" })).toBeNull();
+    expect(await startDebrief(callingIncident, demoProfile, {})).toBeNull();
+    expect(await startDebrief(callingIncident, demoProfile, { VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", SENTINEL_SUPPORT_NUMBER: "+14045550123" })).toBeNull();
   });
 });

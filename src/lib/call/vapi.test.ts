@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { callingIncident } from "../mock";
 import { demoProfile } from "../profile";
-import { getCallState, mapStatus, normalizeTicket, startProviderCall } from "./vapi";
+import { buildDebriefRequest, getCallState, mapOutcome, mapStatus, normalizeTicket, startProviderCall } from "./vapi";
 
 function fakeFetch(body: unknown, status = 200) {
   return vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () => new Response(JSON.stringify(body), { status }));
@@ -132,5 +132,46 @@ describe("normalizeTicket", () => {
   it("keeps a ticket that was already written normally", () => {
     expect(normalizeTicket("PF-88213")).toBe("PF-88213");
     expect(normalizeTicket(undefined)).toBeUndefined();
+  });
+});
+
+describe("customer update call", () => {
+  const ended = {
+    ...callingIncident,
+    status: "calling" as const,
+    call: {
+      ...callingIncident.call!,
+      status: "ended" as const,
+      outcome: {
+        summary: "Line card replaced tonight.",
+        ticketNumber: "PF-48213",
+        technicianWindow: "by 7 PM",
+        creditUsd: 4.3,
+        cause: "a failing line card at the neighborhood fiber node",
+      },
+    },
+  };
+
+  it("calls the customer with only the facts the provider gave", () => {
+    const req = buildDebriefRequest(ended, demoProfile, "pn_1", "+18455550123");
+    expect(req.customer.number).toBe("+18455550123");
+    expect(req.assistant.firstMessage).toContain(demoProfile.providerName);
+    const prompt = req.assistant.model.messages[0].content;
+    expect(prompt).toContain("PF-48213");
+    expect(prompt).toContain("a failing line card at the neighborhood fiber node");
+    expect(prompt).toContain("doesn't need to do anything");
+    expect(req.assistant.model.tools).toEqual([{ type: "endCall" }]);
+  });
+
+  it("tells the customer what to do when the cause is on the account", () => {
+    const billing = { ...ended, call: { ...ended.call, outcome: { summary: "Restores on payment.", cause: "account suspended for an unpaid bill", customerAction: "pay the overdue $129 bill" } } };
+    const prompt = buildDebriefRequest(billing, demoProfile, "pn_1", "+18455550123").assistant.model.messages[0].content;
+    expect(prompt).toContain("pay the overdue $129 bill");
+  });
+
+  it("extracts the cause and the customer's action from the support call", () => {
+    const o = mapOutcome({ id: "c", analysis: { structuredData: { summary: "s", cause: "unpaid bill", customerAction: "pay $129" } } } as never);
+    expect(o?.cause).toBe("unpaid bill");
+    expect(o?.customerAction).toBe("pay $129");
   });
 });
