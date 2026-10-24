@@ -4,7 +4,8 @@ import type { Incident, Snapshot } from "./types";
 import { state, now, log, term } from "./store";
 import { demoProfile } from "./profile";
 import { callDelaySeconds, confirmFault } from "./escalation";
-import { adoptCloudCall, cloudIsCalling, heartbeat } from "./watchdog";
+import { adoptCloudCall, cloudDebriefFor, cloudIsCalling, heartbeat } from "./watchdog";
+import { hasNews } from "./call/vapi";
 import { explainLocally, loadModel, localModelName, unloadModel } from "./llm";
 import { ispOutageSnapshot } from "./mock";
 import { askDevinForFix, startCustomerUpdate, diagnoseSnapshot as diagnoseReal, execContext, hasFixFor, pollDevinFix, pollProviderCall, runFixesFor, sampleNetwork, startProviderCall } from "./adapters";
@@ -13,6 +14,7 @@ import type { Diagnosis } from "./types";
 const TICK_MS = 1500;
 const DONE: Incident["status"][] = ["resolved", "ticketed", "needs_human"];
 const QUEUE_RETRY_MS = 10_000;
+const ANALYSIS_WAIT_MS = 20_000; // the call's outcome (ticket, cause…) lands a few seconds after it ends
 const PROBE_LOG_MS = 10_000;
 
 // ---- the agent console: what Uplink actually runs, and what came back ----------------------
@@ -352,20 +354,25 @@ async function tick() {
     if (inc.status === "calling" && inc.call) {
       inc.call = await pollProviderCall(inc.call.id);
       if (inc.call.status === "ended" || inc.call.status === "failed") {
+        const cloud = await cloudDebriefFor(inc);
+        if (cloud === "wait") return; // the cloud placed this call, so it phones the customer too: never twice
         const o = inc.call.outcome;
+        const endedAt = Date.parse(inc.call.endedAt ?? "") || Date.now();
+        if (!cloud && !hasNews(o) && Date.now() - endedAt < ANALYSIS_WAIT_MS) return; // Vapi fills in the outcome shortly after
         log(inc, "call", o?.ticketNumber ? `Ticket ${o.ticketNumber}${o.creditUsd ? ` · $${o.creditUsd.toFixed(2)} credit` : ""}${o.technicianWindow ? ` · tech ${o.technicianWindow}` : ""}` : "Call ended");
         if (o?.cause) log(inc, "info", `Cause per ${demoProfile.providerName}: ${o.cause}`);
         if (o?.ticketNumber) s.lastTicket = o.ticketNumber;
-        // Only phone the customer when there's news: a ticket, a cause, an ETA, a credit, or something to do.
-        const news = Boolean(o && (o.ticketNumber || o.cause || o.technicianWindow || o.creditUsd || o.customerAction));
-        const debrief = inc.call.status === "ended" && news ? await startCustomerUpdate(inc, demoProfile).catch((e) => {
+        // Only phone the customer when there's news: a ticket, a cause, an ETA, a credit, or something to do —
+        // even if the call was cut off after the rep gave it.
+        const news = hasNews(o);
+        const debrief = cloud ?? (news ? await startCustomerUpdate(inc, demoProfile).catch((e) => {
           console.error("[sentinel] customer update call failed", e);
           return null;
-        }) : null;
+        }) : null);
         if (debrief) {
           inc.debrief = debrief;
           inc.status = "informing";
-          log(inc, "call", `Calling ${demoProfile.customerName} with the update`);
+          log(inc, "call", cloud ? `The cloud watchdog phoned ${demoProfile.customerName} with the update` : `Calling ${demoProfile.customerName} with the update`);
         } else if (!news) {
           inc.status = "needs_human";
           log(inc, "info", `The call with ${demoProfile.providerName} didn't get anywhere — needs a human (not bothering ${demoProfile.customerName} with no news)`);

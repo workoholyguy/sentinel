@@ -34,15 +34,15 @@ export const outcomeSchema = {
 } as const;
 
 export function buildCallRequest(incident: Incident, profile: ProviderProfile, phoneNumberId: string) {
-  const { systemPrompt, firstMessage } = buildAgentPrompt(incident, profile);
+  const { systemPrompt } = buildAgentPrompt(incident, profile); // its opening line is in the prompt
   return {
     phoneNumberId,
     customer: { number: profile.supportNumber, name: `${profile.providerName} support` },
     metadata: { incidentId: incident.id },
     assistant: {
       name: "Uplink provider call",
-      firstMessage,
-      firstMessageMode: "assistant-speaks-first",
+      // Whoever picks up speaks first: an opening line spoken on connect is half over before the phone reaches their ear.
+      firstMessageMode: "assistant-waits-for-user",
       model: {
         provider: "openai",
         model: "gpt-4o",
@@ -153,6 +153,11 @@ export function mapOutcome(call: VapiCall): CallOutcome | undefined {
   return outcome;
 }
 
+/** Worth phoning the customer about: a ticket, a cause, an ETA, a credit, or something for them to do. */
+export function hasNews(o?: CallOutcome): boolean {
+  return Boolean(o && (o.ticketNumber || o.cause || o.technicianWindow || o.creditUsd || o.customerAction));
+}
+
 export function toCallState(call: VapiCall): CallState {
   const status = mapStatus(call.status, call.endedReason);
   const done = status === "ended" || status === "failed";
@@ -200,15 +205,14 @@ export async function getCallState(id: string, { apiKey, fetchImpl = fetch }: Ge
 
 /** The follow-up call to the customer with what the provider said. */
 export function buildDebriefRequest(incident: Incident, profile: ProviderProfile, phoneNumberId: string, customerNumber: string) {
-  const { systemPrompt, firstMessage } = buildDebriefPrompt(incident, profile);
+  const { systemPrompt } = buildDebriefPrompt(incident, profile); // its opening line is in the prompt
   return {
     phoneNumberId,
     customer: { number: customerNumber, name: profile.customerName },
     metadata: { incidentId: incident.id, kind: "debrief" },
     assistant: {
       name: "Uplink customer update",
-      firstMessage,
-      firstMessageMode: "assistant-speaks-first",
+      firstMessageMode: "assistant-waits-for-user",
       model: {
         provider: "openai",
         model: "gpt-4o",

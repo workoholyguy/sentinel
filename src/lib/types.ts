@@ -176,8 +176,32 @@ export interface WatchdogState {
   enabled: boolean;
   quietSeconds: number;
   lastOk?: number; // last check-in the cloud acknowledged
-  called?: { id: string; at: number; ok: boolean; error?: string } | null; // a call the cloud placed while we were offline
+  called?: CloudCall | null; // a call the cloud placed while we were offline
   acked?: string;
+  owned?: string; // the provider call on screen whose customer update the cloud makes, not Uplink
+  ownedCloud?: string; // the cloud call that update belongs to (news on it arrives with each check-in)
+  dismissed?: string; // a cloud call Uplink asked to stand down: the cloud mustn't phone the customer about it
+  cloudDebrief?: CloudDebrief | null; // what the cloud did about that customer call
+}
+
+/** A provider call the cloud placed while the house was dark. */
+export interface CloudCall {
+  id: string;
+  at: number;
+  ok: boolean;
+  error?: string;
+  ackedAt?: number; // Uplink already picked it up (e.g. before a restart): never taken over twice
+  debrief?: CloudDebrief;
+}
+
+/** The customer update the cloud placed (or skipped, with no news) after its provider call ended. */
+export interface CloudDebrief {
+  id?: string;
+  at: number;
+  ok: boolean;
+  pending?: boolean; // the cloud is dialing the customer right now
+  skipped?: boolean;
+  error?: string;
 }
 
 /** The on-device model only runs during an incident: asleep → waking → troubleshooting → done → asleep. */

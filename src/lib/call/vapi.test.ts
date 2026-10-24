@@ -23,7 +23,9 @@ describe("startProviderCall", () => {
     const body = JSON.parse(String(init?.body));
     expect(body.phoneNumberId).toBe("pn_1");
     expect(body.customer.number).toBe(demoProfile.supportNumber);
-    expect(body.assistant.firstMessage).toMatch(/AI assistant/);
+    expect(body.assistant.firstMessageMode).toBe("assistant-waits-for-user"); // the rep says hello first
+    expect(body.assistant.firstMessage).toBeUndefined();
+    expect(body.assistant.model.messages[0].content).toMatch(/open with exactly this: "Hi, I'm an AI assistant/);
     expect(body.assistant.model.messages[0].role).toBe("system");
     expect(body.assistant.model.messages[0].content).toContain(demoProfile.accountNumber);
     expect(body.assistant.model.tools).toContainEqual({ type: "endCall" });
@@ -155,8 +157,9 @@ describe("customer update call", () => {
   it("calls the customer with only the facts the provider gave", () => {
     const req = buildDebriefRequest(ended, demoProfile, "pn_1", "+18455550123");
     expect(req.customer.number).toBe("+18455550123");
-    expect(req.assistant.firstMessage).toContain(demoProfile.providerName);
+    expect(req.assistant.firstMessageMode).toBe("assistant-waits-for-user");
     const prompt = req.assistant.model.messages[0].content;
+    expect(prompt).toMatch(new RegExp(`open with exactly this: "Hi .*${demoProfile.providerName}`));
     expect(prompt).toContain("PF-48213");
     expect(prompt).toContain("a failing line card at the neighborhood fiber node");
     expect(prompt).toContain("doesn't need to do anything");

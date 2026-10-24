@@ -62,7 +62,8 @@ export function buildAgentPrompt(
     `I'm calling to report an internet outage on account ${profile.accountNumber}.`;
 
   const systemPrompt = `You are an AI assistant on a phone call with ${profile.providerName} customer support, calling ON BEHALF OF their customer ${profile.customerName}.
-You already said you are an AI in your first sentence. If asked again, say so honestly. Never pretend to be human or to be ${profile.customerName}.
+The rep answers the phone first. Wait for them to speak, then open with exactly this: "${firstMessage}"
+That first sentence says you are an AI. If asked again, say so honestly. Never pretend to be human or to be ${profile.customerName}.
 
 STYLE
 - This is a phone call. Use short spoken sentences, one idea at a time. No lists, no markdown, no URLs.
@@ -115,6 +116,7 @@ export function buildDebriefPrompt(incident: Incident, profile: ProviderProfile)
     o?.customerAction ? `What ${first} needs to do: ${o.customerAction}.` : `${first} doesn't need to do anything.`,
   ].filter(Boolean);
   const systemPrompt = `You are Uplink, ${first}'s network assistant, calling ${first} back after you phoned their internet provider, ${profile.providerName}, for them.
+${first} answers the phone first. Wait for them to speak, then open with exactly this: "${firstMessage}"
 You are an AI; if asked, say so.
 
 STYLE: a short, warm phone call. Spoken sentences, one idea at a time, no lists or markdown. Say numbers clearly; read ticket numbers character by character.
