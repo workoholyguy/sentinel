@@ -1,24 +1,19 @@
+import { Eyebrow, Section } from "./ui";
+
 // Names only, no logos: UPLink phones whichever provider's support line the customer has.
-const PROVIDERS = ["Comcast Business", "AT&T", "Verizon", "Spectrum", "Cox", "Frontier", "Optimum", "Google Fiber", "T-Mobile", "Lumen"];
+const PROVIDERS = ["Comcast", "AT&T", "Verizon", "Spectrum", "Cox", "Frontier", "Optimum", "Google Fiber", "T-Mobile", "Lumen"];
 
 export function Providers() {
   return (
-    <div className="relative border-y hairline bg-white/[0.01]">
-      <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-4 py-7 sm:flex-row sm:items-center sm:gap-10 sm:px-8 lg:px-14">
-        <div className="shrink-0 font-mono text-[11px] uppercase tracking-label text-white/35">
-          Calls any provider&apos;s
-          <br className="hidden sm:block" /> support line
-        </div>
-        <div className="fade-x min-w-0 flex-1 overflow-hidden">
-          <div className="marquee flex w-max gap-14">
-            {[...PROVIDERS, ...PROVIDERS].map((p, i) => (
-              <span key={i} aria-hidden={i >= PROVIDERS.length} className="whitespace-nowrap text-[21px] font-semibold tracking-[-0.03em] text-white/25">
-                {p}
-              </span>
-            ))}
-          </div>
-        </div>
+    <Section className="py-14">
+      <Eyebrow className="text-center">Calls any provider&apos;s support line</Eyebrow>
+      <div className="mx-auto mt-8 flex max-w-4xl flex-wrap items-center justify-center gap-x-12 gap-y-5">
+        {PROVIDERS.map((p) => (
+          <span key={p} className="text-[22px] font-semibold tracking-[-0.03em] text-neutral-400 transition-colors hover:text-neutral-700">
+            {p}
+          </span>
+        ))}
       </div>
-    </div>
+    </Section>
   );
 }

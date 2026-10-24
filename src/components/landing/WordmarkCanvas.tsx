@@ -9,12 +9,12 @@ const FAULT_EVERY_MS = 6500;
 const FAULT_MS = 1300; // red, flickering, sagging
 const HEAL_MS = 1000; // green ripple spreading out from the fault
 
-// aurora stops across the word, left → right
+// soft white → lavender → pink across the word, for the indigo footer sky
 const STOPS: Array<[number, number, number]> = [
-  [56, 225, 255],
-  [91, 140, 255],
-  [167, 139, 250],
-  [240, 171, 252],
+  [255, 255, 255],
+  [221, 214, 254],
+  [251, 207, 232],
+  [255, 255, 255],
 ];
 
 function aurora(f: number): [number, number, number] {
@@ -132,23 +132,23 @@ export function WordmarkCanvas() {
 
         let tx = hx;
         let ty = hy;
-        let a = letter ? 0.26 : 0.05;
+        let a = letter ? 0.3 : 0.06;
         let [r, g, b] = letter ? aurora(hx / w) : [255, 255, 255];
 
         // the signal sweep
         const s = Math.exp(-(((hx - sweepX) / sweepBand) ** 2));
-        a += s * (letter ? 0.74 : 0.12);
+        a += s * (letter ? 0.7 : 0.1);
 
         // outage: dots near the fault go red, flicker and sag
         const fd = Math.hypot(hx - fault.x, hy - fault.y);
         if (letter && faulting && fd < faultR) {
           const k = 1 - fd / faultR;
-          [r, g, b] = [255, 77, 109];
+          [r, g, b] = [251, 113, 133];
           a = 0.35 + 0.5 * k * (Math.sin(now / 45 + seed * 40) > 0 ? 1 : 0.35);
           ty += k * gap * 1.6 * Math.min(1, ft / 400);
         } else if (letter && healing && fd < healR && fd > healR - faultR * 0.9) {
           // the healing ripple front flashes green as it passes
-          [r, g, b] = [52, 211, 153];
+          [r, g, b] = [110, 231, 183];
           a = Math.max(a, 0.9);
         }
 

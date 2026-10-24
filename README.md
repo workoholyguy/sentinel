@@ -18,7 +18,8 @@ Add `FULLSCREEN=1` for a full-screen window.
 
 ## Website
 
-The public face of the product is **UPLink**. `pnpm dev` serves the marketing site at `/` (problem, the three
-escalation levels — local fix, provider call, Devin — on-device diagnosis, the B2B pitch) and the live dashboard
-at `/dashboard`. The site's code lives in `src/components/landing/`; its scripted demos are plain timelines
-(`script.ts`), so they're unit-tested without a browser.
+The public face of the product is **UPLink**. `pnpm dev` serves the marketing site at `/` and the live dashboard at
+`/dashboard`. The site lives in `src/components/landing/`: a night-sky hero with cloud mascots, one product demo that
+plays the escalation end to end (fix locally → call the ISP → Devin writes a fix), then the problem, features,
+downtime cost and a closing CTA. The demo stages are pure functions of a playhead (`script.ts`), so they're
+unit-tested without a browser.

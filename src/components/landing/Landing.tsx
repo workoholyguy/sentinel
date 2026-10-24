@@ -1,27 +1,23 @@
-import { Footer } from "./Footer";
-import { ForTeams } from "./ForTeams";
+import { Closing } from "./Closing";
+import { Cost } from "./Cost";
+import { Features } from "./Features";
 import { Hero } from "./Hero";
-import { HowItWorks } from "./HowItWorks";
 import { Nav } from "./Nav";
-import { Offline } from "./Offline";
-import { Platforms } from "./Platforms";
-import { Problem } from "./Problem";
 import { Providers } from "./Providers";
+import { Statement } from "./Statement";
 
 export function Landing() {
   return (
-    <div className="relative min-h-screen overflow-x-clip bg-ink-950 text-white">
+    <div className="relative min-h-screen overflow-x-clip bg-[#fafafa] text-neutral-950">
       <Nav />
       <main>
         <Hero />
         <Providers />
-        <Problem />
-        <HowItWorks />
-        <Offline />
-        <ForTeams />
-        <Platforms />
+        <Statement />
+        <Features />
+        <Cost />
       </main>
-      <Footer />
+      <Closing />
     </div>
   );
 }

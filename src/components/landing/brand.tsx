@@ -20,17 +20,6 @@ export function LogoMark({ className = "h-7 w-7" }: { className?: string }) {
   );
 }
 
-export function Wordmark({ className = "" }: { className?: string }) {
-  return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <LogoMark />
-      <span className="text-[19px] font-semibold tracking-[-0.03em] text-white">
-        UP<span className="text-white/70">Link</span>
-      </span>
-    </span>
-  );
-}
-
 // Devin's mark, rebuilt from three rounded hexagons with the keyhole notch and fillets cut out.
 const HEX_R = 97.8; // circumradius, inset so the rounded stroke lands on the true edge
 const hex = (cx: number, cy: number) =>

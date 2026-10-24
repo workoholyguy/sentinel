@@ -1,130 +1,47 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
-import type { Tone } from "./script";
 
-export const TONE_TEXT: Record<Tone, string> = {
-  plain: "text-white/85",
-  muted: "text-white/40",
-  ok: "text-ok",
-  bad: "text-bad",
-  warn: "text-warn",
-  accent: "text-accent",
-  violet: "text-violet",
-};
-
-export function Eyebrow({ children, color = "#38e1ff" }: { children: ReactNode; color?: string }) {
-  return (
-    <div className="inline-flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-label text-white/50">
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 12px ${color}` }} />
-      {children}
-    </div>
-  );
-}
-
-/** Section frame with the faint vertical rails and corner ticks that run down the page. */
+/** A page band with the thin double rails that frame the content (as on the reference sites). */
 export function Section({ id, children, className = "" }: { id?: string; children: ReactNode; className?: string }) {
   return (
-    <section id={id} className={`relative scroll-mt-24 ${className}`}>
-      <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-full max-w-[1240px] -translate-x-1/2 border-x hairline lg:block" />
-      <Ticks />
-      <div className="relative mx-auto w-full max-w-[1240px] px-4 sm:px-8 lg:px-14">{children}</div>
+    <section id={id} className={`relative scroll-mt-20 border-t border-neutral-200/80 ${className}`}>
+      <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-full max-w-[1264px] -translate-x-1/2 border-x border-neutral-200/80 lg:block" />
+      <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-full max-w-[1200px] -translate-x-1/2 border-x border-neutral-200/80 lg:block" />
+      <div className="relative mx-auto w-full max-w-[1200px] px-5 sm:px-10 lg:px-16">{children}</div>
     </section>
   );
 }
 
-function Ticks() {
+export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`font-mono text-[12px] uppercase tracking-[0.14em] text-neutral-500 ${className}`}>{children}</div>;
+}
+
+export function Heading({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
   return (
-    <div className="pointer-events-none absolute left-1/2 top-0 hidden w-full max-w-[1240px] -translate-x-1/2 lg:block">
-      <span className="absolute -left-[5px] -top-[5px] h-[9px] w-[9px] text-white/25">
-        <Plus />
-      </span>
-      <span className="absolute -right-[5px] -top-[5px] h-[9px] w-[9px] text-white/25">
-        <Plus />
-      </span>
-      <div className="absolute inset-x-0 top-0 border-t hairline" />
+    <div className="mx-auto max-w-2xl text-center">
+      <h2 className="text-[clamp(34px,5vw,58px)] font-semibold leading-[1.04] tracking-[-0.045em] text-neutral-950">{children}</h2>
+      {sub && <p className="mx-auto mt-5 max-w-lg text-[17px] leading-relaxed text-neutral-500">{sub}</p>}
     </div>
   );
 }
 
-function Plus() {
-  return (
-    <svg viewBox="0 0 9 9" className="h-full w-full" aria-hidden="true">
-      <path d="M4.5 0v9M0 4.5h9" stroke="currentColor" strokeWidth="1" />
-    </svg>
-  );
-}
+type ButtonTone = "dark" | "light" | "outline" | "navy";
+const TONES: Record<ButtonTone, string> = {
+  dark: "bg-neutral-950 text-white hover:bg-neutral-800",
+  light: "bg-white text-neutral-950 shadow-[0_8px_30px_-8px_rgb(30_27_75/0.45)] hover:bg-indigo-50",
+  outline: "border border-neutral-200 bg-white text-neutral-950 hover:border-neutral-300",
+  navy: "bg-[#1b1a4b] text-white hover:bg-[#24225e]",
+};
 
-export function SectionHeading({
-  eyebrow,
-  color,
-  title,
-  dim,
-  children,
-  center = false,
-}: {
-  eyebrow: string;
-  color?: string;
-  title: ReactNode;
-  dim?: ReactNode;
-  children?: ReactNode;
-  center?: boolean;
-}) {
-  return (
-    <div className={center ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
-      <Eyebrow color={color}>{eyebrow}</Eyebrow>
-      <h2 className="mt-5 text-[clamp(34px,5.2vw,64px)] font-semibold leading-[1.02] tracking-[-0.045em] text-white">
-        {title}
-        {dim && (
-          <>
-            <br />
-            <span className="text-white/40">{dim}</span>
-          </>
-        )}
-      </h2>
-      {children && <p className={`mt-6 text-[17px] leading-relaxed text-white/55 sm:text-lg ${center ? "mx-auto max-w-xl" : "max-w-xl"}`}>{children}</p>}
-    </div>
-  );
-}
-
-/** App window chrome used by the demo stages. */
-export function Window({
-  title,
-  right,
-  children,
-  className = "",
-  glow = "56 225 255",
-}: {
-  title: ReactNode;
-  right?: ReactNode;
-  children: ReactNode;
-  className?: string;
-  glow?: string;
-}) {
-  return (
-    <div className={`relative ${className}`}>
-      <div
-        className="pointer-events-none absolute -inset-8 -z-10 rounded-[48px] opacity-60 blur-3xl"
-        style={{ background: `radial-gradient(60% 60% at 50% 40%, rgb(${glow} / 0.18), transparent 70%)` }}
-      />
-      <div className="overflow-hidden rounded-2xl border border-white/[0.09] bg-[#070a11]/95 shadow-[0_40px_120px_-40px_rgb(0_0_0/0.9)]">
-        <div className="flex items-center gap-3 border-b border-white/[0.06] bg-white/[0.02] px-4 py-3">
-          <div className="flex gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-          </div>
-          <div className="min-w-0 flex-1 truncate font-mono text-[11px] text-white/45">{title}</div>
-          {right}
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-export function Chip({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 font-mono text-[11px] text-white/60 ${className}`}>
+export function Button({ href, tone = "dark", children, className = "" }: { href: string; tone?: ButtonTone; children: ReactNode; className?: string }) {
+  const cls = `inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-medium transition ${TONES[tone]} ${className}`;
+  return href.startsWith("/") ? (
+    <Link href={href} className={cls}>
       {children}
-    </span>
+    </Link>
+  ) : (
+    <a href={href} className={cls}>
+      {children}
+    </a>
   );
 }
