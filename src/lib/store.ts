@@ -2,7 +2,7 @@
 import type { Incident, Snapshot } from "./types";
 import { healthySnapshot } from "./mock";
 
-export type DemoMode = "none" | "isp-outage";
+export type DemoMode = "none" | "isp-outage" | "ipv6-blackhole";
 
 export interface SentinelState {
   snapshot: Snapshot;
