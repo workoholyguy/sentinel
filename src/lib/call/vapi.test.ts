@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { callingIncident } from "../mock";
 import { demoProfile } from "../profile";
-import { buildDebriefRequest, getCallState, mapOutcome, mapStatus, normalizeTicket, startProviderCall } from "./vapi";
+import { buildCallRequest, buildDebriefRequest, getCallState, mapOutcome, mapStatus, normalizeTicket, startProviderCall } from "./vapi";
 
 function fakeFetch(body: unknown, status = 200) {
   return vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () => new Response(JSON.stringify(body), { status }));
@@ -173,5 +173,14 @@ describe("customer update call", () => {
     const o = mapOutcome({ id: "c", analysis: { structuredData: { summary: "s", cause: "unpaid bill", customerAction: "pay $129" } } } as never);
     expect(o?.cause).toBe("unpaid bill");
     expect(o?.customerAction).toBe("pay $129");
+  });
+});
+
+describe("no dead air", () => {
+  it("checks in after a quiet stretch on both calls", () => {
+    const provider = buildCallRequest(callingIncident, demoProfile, "pn_1");
+    expect(provider.assistant.messagePlan.idleTimeoutSeconds).toBe(10);
+    const debrief = buildDebriefRequest(callingIncident, demoProfile, "pn_1", "+18455550123");
+    expect(debrief.assistant.messagePlan.idleMessages.length).toBeGreaterThan(0);
   });
 });

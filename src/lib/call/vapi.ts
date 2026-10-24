@@ -52,8 +52,10 @@ export function buildCallRequest(incident: Incident, profile: ProviderProfile, p
       },
       voice: { provider: "vapi", voiceId: "Elliot" },
       endCallMessage: "Thanks for your help. Goodbye.",
-      // Support lines put callers on hold; don't hang up on silence too early.
+      // Support lines put callers on hold; don't hang up on silence too early,
+      // but check in after a quiet stretch instead of leaving dead air.
       silenceTimeoutSeconds: 120,
+      messagePlan: { idleMessages: ["I'm still on the line whenever you're ready.", "Still here — take your time."], idleTimeoutSeconds: 10 },
       maxDurationSeconds: 1200,
       analysisPlan: {
         summaryPrompt: "Summarize in 1-2 sentences what the internet provider agreed to do on this support call.",
@@ -218,6 +220,7 @@ export function buildDebriefRequest(incident: Incident, profile: ProviderProfile
       endCallMessage: "Talk soon. Bye!",
       silenceTimeoutSeconds: 30,
       maxDurationSeconds: 300,
+      messagePlan: { idleMessages: ["Are you still there?"], idleTimeoutSeconds: 8 },
     },
   };
 }

@@ -351,7 +351,9 @@ async function tick() {
         log(inc, "call", o?.ticketNumber ? `Ticket ${o.ticketNumber}${o.creditUsd ? ` · $${o.creditUsd.toFixed(2)} credit` : ""}${o.technicianWindow ? ` · tech ${o.technicianWindow}` : ""}` : "Call ended");
         if (o?.cause) log(inc, "info", `Cause per ${demoProfile.providerName}: ${o.cause}`);
         if (o?.ticketNumber) s.lastTicket = o.ticketNumber;
-        const debrief = inc.call.status === "ended" && o?.summary ? await startCustomerUpdate(inc, demoProfile).catch((e) => {
+        // Only phone the customer when there's news: a ticket, a cause, an ETA, a credit, or something to do.
+        const news = Boolean(o && (o.ticketNumber || o.cause || o.technicianWindow || o.creditUsd || o.customerAction));
+        const debrief = inc.call.status === "ended" && news ? await startCustomerUpdate(inc, demoProfile).catch((e) => {
           console.error("[sentinel] customer update call failed", e);
           return null;
         }) : null;
@@ -359,6 +361,9 @@ async function tick() {
           inc.debrief = debrief;
           inc.status = "informing";
           log(inc, "call", `Calling ${demoProfile.customerName} with the update`);
+        } else if (!news) {
+          inc.status = "needs_human";
+          log(inc, "info", `The call with ${demoProfile.providerName} didn't get anywhere — needs a human (not bothering ${demoProfile.customerName} with no news)`);
         } else {
           inc.status = "ticketed";
         }

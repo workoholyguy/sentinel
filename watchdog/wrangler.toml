@@ -1,0 +1,12 @@
+# Uplink's cloud watchdog: if the house goes dark, this places the provider call.
+name = "uplink-watchdog"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+[[durable_objects.bindings]]
+name = "WATCHDOG"
+class_name = "Watchdog"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Watchdog"]
