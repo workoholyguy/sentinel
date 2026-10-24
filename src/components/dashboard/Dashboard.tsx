@@ -157,7 +157,7 @@ function Overview({ data, poll, now }: { data: StatusResponse; poll: Poll; now: 
         />
       ) : (
         <Idle label="Devin · new repairs" testid="devin-idle">
-          When a fault isn't in the playbook, Devin writes a new repair with tests and opens a pull request.
+          When a fault isn’t in the playbook, Devin writes a new repair with tests and opens a pull request.
           {data.lastRepair?.prUrl && (
             <>
               {" "}Last one:{" "}
@@ -173,7 +173,7 @@ function Overview({ data, poll, now }: { data: StatusResponse; poll: Poll; now: 
         <CustomerUpdate call={incident.debrief} name={data.profile.customerName} cause={call?.outcome?.cause} action={call?.outcome?.customerAction} />
       ) : (
         <Idle label="Customer update" testid="customer-idle">
-          After the call with {provider}, Uplink phones {customer} with what's wrong and what happens next.
+          After the call with {provider}, Uplink phones {customer} with what’s wrong and what happens next.
         </Idle>
       )}
 

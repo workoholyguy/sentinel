@@ -57,15 +57,21 @@ const VERSION = "2026-10-24.5-calling-switch"; // shown on /status: tells when t
 
 // Still on the provider call, with the customer to phone when it ends.
 const following = (c?: Called | null): c is Called => Boolean(c?.ok && c.id && c.debriefWith && !c.debrief);
-const publicView = ({ debriefWith: _, ...c }: Called) => c;
+const publicView = (called: Called): Omit<Called, "debriefWith"> => {
+  const view = { ...called };
+  delete view.debriefWith;
+  return view;
+};
 
-export default {
+const worker = {
   async fetch(req: Request, env: Env): Promise<Response> {
     if (req.headers.get("authorization") !== `Bearer ${env.WATCHDOG_TOKEN}`) return new Response("unauthorized", { status: 401 });
     const house = env.WATCHDOG.get(env.WATCHDOG.idFromName("home"));
     return house.fetch(req);
   },
 };
+
+export default worker;
 
 export class Watchdog {
   constructor(

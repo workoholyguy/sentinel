@@ -133,7 +133,7 @@ export function DevinPanel({
         >
           <GitPullRequest className="h-4 w-4 shrink-0 text-ok" />
           <div className="min-w-0">
-            <div className="text-[13px] text-white/50">Devin's last repair</div>
+            <div className="text-[13px] text-white/50">Devin’s last repair</div>
             <div className="truncate font-mono text-[12px] text-ok">{previous.prUrl!.replace(/^https:\/\/github\.com\//, "")}</div>
           </div>
         </a>
