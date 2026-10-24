@@ -116,7 +116,34 @@ function newIncident(simulated: boolean): Incident {
 async function tick() {
   const s = state();
   s.snapshot = await sample();
-  const inc = s.incident;
+  let inc = s.incident;
+
+  // 0. A different, confirmed fault replaces what's on screen: a finished incident, or one that's
+  //    only waiting on Devin (which keeps writing its fix in the background). Otherwise a stale
+  //    incident would hide a new outage.
+  const parked = inc && inc.diagnosis && (DONE.includes(inc.status) || (inc.status === "fixing" && inc.repair && inc.repair.status !== "queued"));
+  if (inc && parked) {
+    const d = diagnoseSnapshot(s.snapshot);
+    if (d && d.fault !== inc.diagnosis!.fault) {
+      const firstSighting = !s.suspect || s.suspect.fault !== d.fault;
+      const check = confirmFault(s.suspect, d.fault, Date.now(), s.demo !== "none");
+      s.suspect = check.suspect;
+      if (firstSighting) {
+        term("info", `something new looks wrong (${d.fault.replaceAll("_", " ").toLowerCase()}) — checking it isn't a blip`);
+        probeLines(s.snapshot);
+        void wakeModel("new fault suspected — waking the local model");
+      }
+      if (check.confirmed) {
+        if (!DONE.includes(inc.status)) {
+          inc.status = "needs_human";
+          log(inc, "info", "A new fault took over — Devin keeps writing this repair in the background");
+        }
+        s.history.unshift(inc);
+        s.incident = null;
+        inc = null;
+      }
+    }
+  }
 
   // 1. Nothing open: look for a fault.
   if (!inc || DONE.includes(inc.status)) {

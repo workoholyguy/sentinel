@@ -5,8 +5,8 @@ import { Check, Cpu, ShieldCheck, X } from "lucide-react";
 import type { Diagnosis, FixResult, IncidentStatus } from "../../lib/types";
 import { STEP_LABEL, humanize, stepsFor } from "./format";
 
-export function Stepper({ status, escalated }: { status: IncidentStatus; escalated: boolean }) {
-  const steps = stepsFor(status, escalated);
+export function Stepper({ status, escalated, idle = false }: { status: IncidentStatus; escalated: boolean; idle?: boolean }) {
+  const steps = idle ? stepsFor(status, true).map((s) => ({ ...s, state: "todo" as const })) : stepsFor(status, escalated);
   return (
     <ol className="flex items-center" data-testid="stepper">
       {steps.map((s, i) => {

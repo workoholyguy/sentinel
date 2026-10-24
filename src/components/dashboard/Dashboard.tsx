@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { FlaskConical, PhoneOutgoing } from "lucide-react";
 import type { CallState, Incident, StatusResponse } from "../../lib/types";
 import { CallPanel } from "./CallPanel";
@@ -13,56 +13,17 @@ import { ActivityPanel, CallCountdown, ModelPill } from "./Console";
 import { formatClock, formatDuration, incidentEnd, incidentTitle, isEscalated, isTerminal, probeFor } from "./format";
 import { type Poll, useNow, useStatusPoll } from "./hooks";
 
-const AMBIENT = { calm: "56 225 255", alert: "255 77 109", good: "52 211 153", warn: "251 191 36" };
-
 export function Dashboard() {
   const poll = useStatusPoll();
   const { data, connected } = poll;
   const now = useNow();
-  const incident = data?.incident ?? null;
-  const mood = !incident
-    ? "calm"
-    : incident.status === "needs_human"
-      ? "warn"
-      : isTerminal(incident.status) || incident.status === "informing"
-        ? "good"
-        : "alert";
 
+  // One page that never rearranges: every section is always there; only what's inside changes.
   return (
-    <main className="relative h-screen w-screen overflow-hidden" style={{ ["--ambient" as string]: AMBIENT[mood] }}>
-      <div className="ambient pointer-events-none absolute inset-0" />
-      <div className="bg-grid pointer-events-none absolute inset-0" />
-      <div className="relative mx-auto flex h-full max-w-[1920px] flex-col gap-7 px-12 py-9">
+    <main className="min-h-screen w-full">
+      <div className="mx-auto flex max-w-[1180px] flex-col gap-5 px-10 py-8">
         <Header data={data} connected={connected} now={now} />
-        {!data ? (
-          <Boot />
-        ) : (
-          <AnimatePresence mode="wait">
-            {incident ? (
-              <motion.div
-                key="incident"
-                className="min-h-0 flex-1"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.4 }}
-              >
-                <IncidentView data={data} incident={incident} now={now} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="healthy"
-                className="min-h-0 flex-1"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.4 }}
-              >
-                <HealthyView data={data} poll={poll} now={now} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
+        {!data ? <Boot /> : <Overview data={data} poll={poll} now={now} />}
       </div>
       <DemoControls />
     </main>
@@ -122,39 +83,13 @@ function Boot() {
   );
 }
 
-function HealthyView({ data, poll, now }: { data: StatusResponse; poll: Poll; now: number }) {
-  const nodes = Object.values(data.snapshot.nodes);
-  const healthy = nodes.filter((h) => h === "ok").length;
-  const rtt = probeFor(data.snapshot.probes, "internet")?.latencyMs;
+// An empty section keeps its place: it says what it will do, instead of disappearing.
+function Idle({ label, children, testid }: { label: string; children: React.ReactNode; testid?: string }) {
   return (
-    <div className="flex h-full flex-col gap-7" data-testid="healthy-view">
-      <div className="flex items-end justify-between">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-ok " />
-            <span className="label !text-ok/80">Status</span>
-          </div>
-          <h1 className="mt-2 text-[48px] font-semibold leading-none tracking-[-0.03em]">All systems normal</h1>
-          <p className="mt-3 text-[16px] text-white/45">
-            {healthy} of {nodes.length} hops healthy · checked every 1.5 s · diagnosed on-device
-          </p>
-        </div>
-        <div className="pb-3 text-right">
-          <div className="label">Round trip to internet</div>
-          <div className="mt-2 text-[40px] font-semibold leading-none tracking-tight tabular text-white">
-            {rtt != null ? Math.round(rtt) : "—"}
-            <span className="ml-1 text-2xl text-white/40">ms</span>
-          </div>
-        </div>
-      </div>
-      <div className="panel flex flex-1 items-center px-20 py-10">
-        <NetworkMap snapshot={data.snapshot} />
-      </div>
-      <div className="grid grid-cols-[1fr_440px] gap-5">
-        <UptimeStats history={data.history} uptimePct={poll.uptimePct} healthySince={poll.healthySince} now={now} />
-        <ActivityPanel terminal={data.terminal ?? []} className="h-[200px]" />
-      </div>
-    </div>
+    <section className="panel p-6" data-testid={testid}>
+      <div className="label">{label}</div>
+      <div className="mt-2 text-[15px] leading-snug text-white/40">{children}</div>
+    </section>
   );
 }
 
@@ -164,83 +99,156 @@ function repairStart(incident: Incident): number {
   return Date.parse(ev?.at ?? incident.startedAt);
 }
 
-function IncidentView({ data, incident, now }: { data: StatusResponse; incident: Incident; now: number }) {
+function Overview({ data, poll, now }: { data: StatusResponse; poll: Poll; now: number }) {
+  const incident = data.incident;
+  const provider = data.profile.providerName;
+  const customer = data.profile.customerName.split(" ")[0];
+  const call = incident?.call;
+  return (
+    <div className="flex flex-col gap-5" data-testid={incident ? "incident-view" : "healthy-view"}>
+      <StatusSection data={data} incident={incident} now={now} />
+
+      <section className="panel px-12 py-8">
+        <NetworkMap snapshot={data.snapshot} compact />
+      </section>
+
+      {incident?.diagnosis ? (
+        <div className="min-h-[220px]">
+          <DiagnosisCard diagnosis={incident.diagnosis} />
+        </div>
+      ) : (
+        <Idle label="On-device diagnosis" testid="diagnosis-idle">
+          Nothing to diagnose. The local model sleeps until something breaks, then explains it right here — no cloud.
+        </Idle>
+      )}
+
+      {incident && (incident.fixes.length > 0 || incident.status === "fixing" || incident.repair) ? (
+        <FixesList fixes={incident.fixes} status={incident.status} devin={Boolean(incident.repair)} />
+      ) : (
+        <Idle label="Fixes tried">Nothing to fix. When something on your side breaks, Uplink runs its playbook here and re-checks after each step.</Idle>
+      )}
+
+      {call ? (
+        <div className="h-[460px]">
+          <CallPanel call={call} provider={provider} now={now} />
+        </div>
+      ) : incident?.status === "escalating" ? (
+        <section className="panel p-6">
+          <div className="label">Call to {provider}</div>
+          <CallCountdown incident={incident} provider={provider} now={now} />
+        </section>
+      ) : (
+        <Idle label={`Call to ${provider}`} testid="call-idle">
+          Uplink only calls {provider} when the outage is on their side and lasts a few minutes — with the evidence ready.
+        </Idle>
+      )}
+
+      {incident?.repair ? (
+        <DevinPanel
+          repair={incident.repair}
+          startedAt={repairStart(incident)}
+          now={now}
+          lastRepair={data.lastRepair}
+          hadPlaybook={incident.fixes.length > 0}
+        />
+      ) : (
+        <Idle label="Devin · new repairs" testid="devin-idle">
+          When a fault isn't in the playbook, Devin writes a new repair with tests and opens a pull request.
+          {data.lastRepair?.prUrl && (
+            <>
+              {" "}Last one:{" "}
+              <a className="text-ok/80 underline-offset-2 hover:underline" href={data.lastRepair.prUrl} target="_blank" rel="noreferrer">
+                {data.lastRepair.prUrl.replace(/^https:\/\/github\.com\//, "")}
+              </a>
+            </>
+          )}
+        </Idle>
+      )}
+
+      {incident?.debrief ? (
+        <CustomerUpdate call={incident.debrief} name={data.profile.customerName} cause={call?.outcome?.cause} action={call?.outcome?.customerAction} />
+      ) : (
+        <Idle label="Customer update" testid="customer-idle">
+          After the call with {provider}, Uplink phones {customer} with what's wrong and what happens next.
+        </Idle>
+      )}
+
+      <ActivityPanel events={incident?.timeline} startedAt={incident?.startedAt} terminal={data.terminal ?? []} className="h-[320px]" />
+
+      <UptimeStats history={data.history} uptimePct={poll.uptimePct} healthySince={poll.healthySince} now={now} />
+      <HistoryList items={data.history} now={now} />
+    </div>
+  );
+}
+
+function StatusSection({ data, incident, now }: { data: StatusResponse; incident: Incident | null; now: number }) {
+  if (!incident) {
+    const nodes = Object.values(data.snapshot.nodes);
+    const healthy = nodes.filter((h) => h === "ok").length;
+    const rtt = probeFor(data.snapshot.probes, "internet")?.latencyMs;
+    return (
+      <section className="panel p-7">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-ok" />
+              <span className="label !text-ok/80">All clear</span>
+            </div>
+            <h1 className="mt-2 text-[36px] font-semibold leading-tight tracking-[-0.025em]">All systems normal</h1>
+            <p className="mt-1 text-[15px] text-white/45">
+              {healthy} of {nodes.length} hops healthy · checked every 1.5 s · diagnosed on-device
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="label">Round trip to internet</div>
+            <div className="mt-1 text-[32px] font-semibold leading-none tracking-tight tabular">
+              {rtt != null ? Math.round(rtt) : "—"}
+              <span className="ml-1 text-[18px] text-white/40">ms</span>
+            </div>
+          </div>
+        </div>
+        <div className="mt-7 opacity-40">
+          <Stepper status="detected" escalated={false} idle />
+        </div>
+      </section>
+    );
+  }
   const t0 = Date.parse(incident.startedAt);
   const ended = incidentEnd(incident);
   const end = ended ?? now;
   const done = isTerminal(incident.status);
   const human = incident.status === "needs_human";
   const informing = incident.status === "informing";
-  const escalated = isEscalated(incident);
-  const call = incident.call;
-
   return (
-    <div className="grid h-full grid-cols-12 gap-6" data-testid="incident-view">
-      <div className="col-span-8 flex min-h-0 flex-col gap-6">
-        <section className="panel p-7">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <span className={`h-2.5 w-2.5 rounded-full ${human ? "bg-warn" : done || informing ? "bg-ok" : "bg-bad"}`} />
-                <span className={`label ${human ? "!text-warn/90" : done || informing ? "!text-ok/80" : "!text-bad/90"}`}>
-                  {human
-                    ? "Needs a human"
-                    : informing
-                      ? `Ticket open · updating ${data.profile.customerName.split(" ")[0]}`
-                      : done
-                        ? incident.status === "ticketed"
-                          ? "Escalated · ticket open"
-                          : "Resolved"
-                        : "Active incident"}
-                </span>
-              </div>
-              <h1 className="mt-2 text-[36px] font-semibold leading-tight tracking-[-0.025em]">{incidentTitle(incident)}</h1>
-            </div>
-            <div className="text-right">
-              <div className="label">{ended != null ? (incident.status === "resolved" ? "Resolved in" : "Handled in") : "Elapsed"}</div>
-              <div className="mt-1 text-[32px] font-semibold leading-none tracking-tight tabular">{formatDuration(end - t0)}</div>
-            </div>
+    <section className="panel p-7">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <span className={`h-2.5 w-2.5 rounded-full ${human ? "bg-warn" : done || informing ? "bg-ok" : "bg-bad"}`} />
+            <span className={`label ${human ? "!text-warn/90" : done || informing ? "!text-ok/80" : "!text-bad/90"}`}>
+              {human
+                ? "Needs a human"
+                : informing
+                  ? `Ticket open · updating ${data.profile.customerName.split(" ")[0]}`
+                  : done
+                    ? incident.status === "ticketed"
+                      ? "Escalated · ticket open"
+                      : "Resolved"
+                    : "Active incident"}
+            </span>
           </div>
-          <div className="mt-7">
-            <Stepper status={incident.status} escalated={escalated} />
-            <CallCountdown incident={incident} provider={data.profile.providerName} now={now} />
-          </div>
-        </section>
-
-        <section className="panel flex items-center px-14 py-7">
-          <NetworkMap snapshot={data.snapshot} compact />
-        </section>
-
-        <div className="grid min-h-0 flex-1 grid-cols-[1.35fr_1fr] gap-6">
-          <DiagnosisCard diagnosis={incident.diagnosis} />
-          <div className="flex min-h-0 flex-col gap-6">
-            <FixesList fixes={incident.fixes} status={incident.status} devin={Boolean(incident.repair)} />
-            {incident.debrief && <CustomerUpdate call={incident.debrief} name={data.profile.customerName} cause={call?.outcome?.cause} action={call?.outcome?.customerAction} />}
-            {call && <ActivityPanel events={incident.timeline} startedAt={incident.startedAt} terminal={data.terminal ?? []} className="flex-1" />}
-            {!call && <HistoryList items={data.history} now={now} className="flex-1" />}
-          </div>
+          <h1 className="mt-2 text-[36px] font-semibold leading-tight tracking-[-0.025em]">{incidentTitle(incident)}</h1>
+          <p className="mt-1 text-[15px] text-white/45">{incident.simulated ? "Simulated for the demo · real pipeline" : "Detected on your network"}</p>
+        </div>
+        <div className="text-right">
+          <div className="label">{ended != null ? (incident.status === "resolved" ? "Resolved in" : "Handled in") : "Elapsed"}</div>
+          <div className="mt-1 text-[32px] font-semibold leading-none tracking-tight tabular">{formatDuration(end - t0)}</div>
         </div>
       </div>
-
-      <div className="col-span-4 min-h-0">
-        {call ? (
-          <CallPanel call={call} provider={data.profile.providerName} now={now} />
-        ) : incident.repair ? (
-          <div className="flex h-full min-h-0 flex-col gap-6">
-            <DevinPanel
-              repair={incident.repair}
-              startedAt={repairStart(incident)}
-              now={now}
-              lastRepair={data.lastRepair}
-              hadPlaybook={incident.fixes.length > 0}
-            />
-            <ActivityPanel events={incident.timeline} startedAt={incident.startedAt} terminal={data.terminal ?? []} className="flex-1" />
-          </div>
-        ) : (
-          <ActivityPanel events={incident.timeline} startedAt={incident.startedAt} terminal={data.terminal ?? []} className="h-full" />
-        )}
+      <div className="mt-7">
+        <Stepper status={incident.status} escalated={isEscalated(incident)} />
       </div>
-    </div>
+    </section>
   );
 }
 
