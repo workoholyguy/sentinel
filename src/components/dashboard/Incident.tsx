@@ -11,7 +11,14 @@ export function Stepper({ status, escalated }: { status: IncidentStatus; escalat
     <ol className="flex items-center" data-testid="stepper">
       {steps.map((s, i) => {
         const terminal = s.id === "resolved" || s.id === "ticketed";
-        const tone = s.state === "done" && terminal ? "#34d399" : s.state === "todo" ? "rgb(255 255 255 / 0.18)" : "#38e1ff";
+        const tone =
+          s.state === "done" && s.id === "needs_human"
+            ? "#fbbf24"
+            : s.state === "done" && terminal
+              ? "#34d399"
+              : s.state === "todo"
+                ? "rgb(255 255 255 / 0.18)"
+                : "#38e1ff";
         return (
           <li key={s.id} className={`flex items-center ${i < steps.length - 1 ? "flex-1" : ""}`} data-state={s.state} data-step={s.id}>
             <div className="flex items-center gap-3">
@@ -159,8 +166,10 @@ export function FixesList({ fixes, status, devin = false }: { fixes: FixResult[]
             </motion.li>
           ))}
         </AnimatePresence>
-        {devin && fixes.length === 0 && (
-          <li className="text-[15px] leading-snug text-white/55">Nothing in the playbook fits this fault — handed to Devin.</li>
+        {devin && (
+          <li className="text-[15px] leading-snug text-white/55">
+            {fixes.length === 0 ? "Nothing in the playbook fits this fault — handed to Devin." : "The playbook ran out — handed to Devin."}
+          </li>
         )}
         {status === "fixing" && !devin && (
           <li className="flex items-center gap-3 text-[15px] text-white/45">

@@ -18,11 +18,15 @@ export interface DevinClientOptions {
   /** When set, uses the v3 organization API; otherwise the v1 API. */
   orgId?: string;
   fetchImpl?: FetchLike;
+  /** Per-request timeout; a lossy network must not hang Sentinel. Default 10 s. */
+  timeoutMs?: number;
 }
 
 export interface CreateRepairOptions extends DevinClientOptions {
   title?: string;
   tags?: string[];
+  /** Spend cap for the session (Devin ACUs). */
+  maxAcu?: number;
 }
 
 export const DEFAULT_DEVIN_API_BASE = "https://api.devin.ai";
@@ -68,6 +72,7 @@ async function call(opts: DevinClientOptions, method: "GET" | "POST", path: stri
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(opts.timeoutMs ?? 10_000),
   });
   const text = await res.text();
   if (!res.ok) {
@@ -140,8 +145,10 @@ export function mapStatus(raw: { status?: unknown; status_detail?: unknown; stat
     case "error":
       return "failed";
     case "suspended":
+      // A session that opened its PR and then hit its ACU cap still delivered the fix.
+      if (hasPr) return "finished";
       if (detail && FAILED_SUSPEND_DETAILS.has(detail)) return "failed";
-      return hasPr ? "finished" : "blocked";
+      return "blocked";
   }
 
   return "starting";
@@ -189,6 +196,7 @@ export async function createRepairSession(brief: string, opts: CreateRepairOptio
     structured_output_schema: REPAIR_OUTPUT_SCHEMA,
     ...(opts.title ? { title: opts.title } : {}),
     ...(opts.tags?.length ? { tags: opts.tags } : {}),
+    ...(opts.maxAcu ? { max_acu_limit: opts.maxAcu } : {}),
   };
   const data = await call(opts, "POST", sessionsPath(opts), body);
   const session = toRepairSession(data);
@@ -200,4 +208,14 @@ export async function getRepairSession(id: string, opts: DevinClientOptions): Pr
   const sid = opts.orgId && !id.startsWith("devin-") ? `devin-${id}` : id;
   const data = await call(opts, "GET", `${sessionsPath(opts)}/${encodeURIComponent(sid)}`);
   return toRepairSession({ session_id: sid, ...data });
+}
+
+/** Newest session tagged `tag` that opened a PR (v3 org API only; v1 has no tag filter). */
+export async function latestRepairWithPr(opts: DevinClientOptions, tag = "repair"): Promise<RepairSession | null> {
+  if (!opts.orgId) return null;
+  const data = await call(opts, "GET", `${sessionsPath(opts)}?first=50&tags=${encodeURIComponent(tag)}`);
+  const items = Array.isArray(data.items) ? (data.items as Json[]) : [];
+  const withPr = items.map(toRepairSession).filter((s) => s.prUrl);
+  withPr.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+  return withPr[0] ?? null;
 }

@@ -84,7 +84,8 @@ export type IncidentStatus =
   | "resolved" // fixed locally
   | "escalating" // provider's fault, preparing the call
   | "calling"
-  | "ticketed"; // call finished with an outcome
+  | "ticketed" // call finished with an outcome
+  | "needs_human"; // fixes only rehearsed (dry run), or Devin unavailable / couldn't fix it
 
 export interface TimelineEvent {
   at: string;
@@ -157,4 +158,5 @@ export interface StatusResponse {
   incident: Incident | null;
   history: Incident[];
   profile: ProviderProfile;
+  lastRepair?: RepairState | null; // newest Devin repair that opened a PR (from the Devin API)
 }

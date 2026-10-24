@@ -24,8 +24,30 @@ const TONE: Record<StepState, string> = {
   failed: "#ff4d6d",
 };
 
-export function DevinPanel({ repair, startedAt, now }: { repair: RepairState; startedAt: number; now: number }) {
+export function DevinPanel({
+  repair,
+  startedAt,
+  now,
+  lastRepair,
+  hadPlaybook = false,
+}: {
+  repair: RepairState;
+  startedAt: number;
+  now: number;
+  lastRepair?: RepairState | null;
+  hadPlaybook?: boolean;
+}) {
   const done = repair.status === "finished";
+  const failed = repair.status === "failed";
+  // While this session is still at work, show the last fix Devin actually shipped.
+  const previous = !done && !failed && lastRepair?.prUrl && lastRepair.id !== repair.id ? lastRepair : null;
+  const heading = done
+    ? "Devin wrote the fix"
+    : failed
+      ? "Devin couldn't write a fix — needs a human"
+      : hadPlaybook
+        ? "The playbook didn't fix it — Devin is writing a better repair"
+        : "No playbook for this fault — Devin is writing one";
   const end = done ? Date.parse(repair.updatedAt) : now;
   return (
     <motion.section
@@ -43,7 +65,7 @@ export function DevinPanel({ repair, startedAt, now }: { repair: RepairState; st
         <span className="font-mono text-[13px] tabular text-white/50">{formatDuration(Math.max(0, end - startedAt))}</span>
       </div>
       <h2 className="mt-3 text-[26px] font-semibold leading-tight tracking-[-0.02em]">
-        {done ? "Devin wrote the fix" : "No playbook for this fault — Devin is writing one"}
+        {heading}
       </h2>
 
       <ol className="mt-6 space-y-4">
@@ -90,6 +112,21 @@ export function DevinPanel({ repair, startedAt, now }: { repair: RepairState; st
           </motion.a>
         )}
       </div>
+      {previous && (
+        <a
+          href={previous.prUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-5 flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 transition hover:border-ok/30"
+          data-testid="devin-last-pr"
+        >
+          <GitPullRequest className="h-4 w-4 shrink-0 text-ok" />
+          <div className="min-w-0">
+            <div className="text-[13px] text-white/50">Devin's last repair</div>
+            <div className="truncate font-mono text-[12px] text-ok">{previous.prUrl!.replace(/^https:\/\/github\.com\//, "")}</div>
+          </div>
+        </a>
+      )}
     </motion.section>
   );
 }

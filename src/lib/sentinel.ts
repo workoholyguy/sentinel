@@ -9,6 +9,7 @@ import { askDevinForFix, diagnoseSnapshot as diagnoseReal, execContext, hasFixFo
 import type { Diagnosis } from "./types";
 
 const TICK_MS = 1500;
+const DONE: Incident["status"][] = ["resolved", "ticketed", "needs_human"];
 const DRY_RUN = process.env.SENTINEL_DRY_RUN !== "0"; // real system changes only when explicitly enabled
 
 function injected(): Snapshot | null {
@@ -65,7 +66,7 @@ async function tick() {
   const inc = s.incident;
 
   // 1. Nothing open: look for a fault.
-  if (!inc || inc.status === "resolved" || inc.status === "ticketed") {
+  if (!inc || DONE.includes(inc.status)) {
     const d = diagnoseSnapshot(s.snapshot);
     if (!d) {
       // Healthy again: archive a finished incident after it has been on screen for a while.
@@ -75,7 +76,7 @@ async function tick() {
       }
       return;
     }
-    if (inc && (inc.status === "resolved" || inc.status === "ticketed")) return; // keep showing the result
+    if (inc && DONE.includes(inc.status)) return; // keep showing the result
     const fresh = newIncident(s.demo !== "none");
     s.incident = fresh;
     const worst = s.snapshot.probes.find((p) => p.status !== "ok");
@@ -95,17 +96,22 @@ async function tick() {
   if (s.busy) return;
   s.busy = true;
   try {
-    // 2. Diagnosed: try the fixes we have.
+    // 2. Diagnosed, but nothing in the playbook handles it.
     if (inc.status === "diagnosing" && inc.diagnosis && !(await hasFixFor(inc.diagnosis.fault))) {
+      if (inc.diagnosis.blame === "isp") {
+        inc.status = "escalating";
+        log(inc, "info", `It's ${demoProfile.providerName}'s fault — calling them`);
+        return;
+      }
+      // Only spend a Devin session on a fault that is still there.
+      if (!diagnoseSnapshot(await sample())) {
+        inc.status = "resolved";
+        log(inc, "info", "Cleared on its own before any fix was needed");
+        return;
+      }
       inc.status = "fixing";
       log(inc, "fix", "No repair in the playbook for this fault — asking Devin to write one");
-      const repair = await askDevinForFix(inc, s.snapshot);
-      if (repair) {
-        inc.repair = repair;
-        log(inc, "fix", `Devin session started: ${repair.url}`);
-      } else {
-        log(inc, "info", "Devin not configured (DEVIN_API_KEY) — escalating to a human");
-      }
+      await handOffToDevin(inc, s.snapshot);
       return;
     }
 
@@ -117,8 +123,8 @@ async function tick() {
         inc.status = "resolved";
         log(inc, "fix", inc.repair.prUrl ? `Devin opened a fix: ${inc.repair.prUrl}` : "Devin finished the fix");
       } else if (inc.repair.status === "failed") {
-        inc.status = "resolved";
-        log(inc, "info", "Devin couldn't write a fix — a human will take it from here");
+        inc.status = "needs_human";
+        log(inc, "info", "Devin couldn't write a fix — needs a human");
       }
       return;
     }
@@ -135,6 +141,14 @@ async function tick() {
       } else if (inc.diagnosis.blame === "isp") {
         inc.status = "escalating";
         log(inc, "info", `It's ${demoProfile.providerName}'s fault — calling them`);
+      } else if (DRY_RUN && !inc.simulated) {
+        // Dry-run fixes were only rehearsed, so "they failed" isn't true — don't send Devin after them.
+        inc.status = "needs_human";
+        log(inc, "info", "Dry run: the playbook was rehearsed, not applied — needs a human (SENTINEL_DRY_RUN=0 lets Sentinel act)");
+      } else {
+        // The playbook really ran and didn't fix a fault that's ours: Devin writes a better repair.
+        log(inc, "fix", "The playbook didn't fix it — asking Devin to write a better repair");
+        await handOffToDevin(inc, s.snapshot);
       }
       return;
     }
@@ -161,12 +175,32 @@ async function tick() {
   }
 }
 
+async function handOffToDevin(inc: Incident, snapshot: Snapshot) {
+  const repair = await askDevinForFix(inc, snapshot);
+  if (repair) {
+    inc.repair = repair;
+    log(inc, "fix", `Devin session started: ${repair.url}`);
+  } else {
+    inc.status = "needs_human";
+    log(inc, "info", "Devin couldn't take it (no DEVIN_API_KEY, or the request failed) — needs a human");
+  }
+}
+
 export function ensureRunning() {
   const s = state();
   if (s.started) return;
   s.started = true;
+  // A slow sample (traceroute can take ~4 s) must not overlap the next one,
+  // but a tick stuck for 15 s+ must not stop monitoring either.
+  let tickStarted = 0;
   setInterval(() => {
-    tick().catch((e) => console.error("[sentinel] tick failed", e));
+    if (tickStarted && Date.now() - tickStarted < 15_000) return;
+    const started = (tickStarted = Date.now());
+    tick()
+      .catch((e) => console.error("[sentinel] tick failed", e))
+      .finally(() => {
+        if (tickStarted === started) tickStarted = 0;
+      });
   }, TICK_MS);
 }
 

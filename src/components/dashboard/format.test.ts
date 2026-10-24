@@ -67,6 +67,9 @@ describe("stepsFor", () => {
   it("marks terminal steps done", () => {
     expect(stepsFor("resolved").every((s) => s.state === "done")).toBe(true);
     expect(stepsFor("ticketed").every((s) => s.state === "done")).toBe(true);
+    const human = stepsFor("needs_human");
+    expect(human.map((s) => s.id)).toEqual(["detected", "diagnosing", "fixing", "needs_human"]);
+    expect(human.every((s) => s.state === "done")).toBe(true);
   });
 });
 

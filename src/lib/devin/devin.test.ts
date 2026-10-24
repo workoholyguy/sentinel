@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Diagnosis, Snapshot } from "../types";
 import { buildRepairBrief, pluginIdFor } from "./brief";
-import { createRepairSession, extractPrUrl, getRepairSession, mapStatus, type FetchLike } from "./client";
-import { getRepairStatus, MOCK_TIMELINE, requestRepair, resetMockRepairs } from "./index";
+import { createRepairSession, extractPrUrl, getRepairSession, latestRepairWithPr, mapStatus, type FetchLike } from "./client";
+import { getRepairStatus, MOCK_TIMELINE, peekLastRepair, requestRepair, resetMockRepairs, settleLastRepair } from "./index";
 
 const snapshot: Snapshot = {
   at: "2026-10-24T17:00:00.000Z",
@@ -224,5 +224,73 @@ describe("requestRepair", () => {
     expect(done?.status).toBe("finished");
     expect(done?.prUrl).toMatch(/^https:\/\/github\.com\/.+\/pull\/\d+$/);
     expect(deps.fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe("failed fixes in the brief", () => {
+  it("tells Devin which playbook fixes already ran and failed", () => {
+    const brief = buildRepairBrief({
+      ...input,
+      failedFixes: [{ pluginId: "dns-flush-cache", ok: false, actions: ["dscacheutil -flushcache"], detail: "still SERVFAIL" }],
+    });
+    expect(brief).toContain("existing repair plugins ran for this fault and did not fix it");
+    expect(brief).toContain("- dns-flush-cache: dscacheutil -flushcache — still SERVFAIL");
+  });
+});
+
+describe("Devin's last repair", () => {
+  it("lists repair-tagged v3 sessions and returns the newest one with a PR", async () => {
+    const { fetchImpl, calls } = fakeFetch([
+      {
+        body: {
+          items: [
+            v3Session({ session_id: "devin-old", status: "exit", updated_at: 100, pull_requests: [{ pr_url: "https://github.com/o/r/pull/1", pr_state: "open" }] }),
+            v3Session({ session_id: "devin-nopr", status: "running", updated_at: 300 }),
+            v3Session({ session_id: "devin-new", status: "exit", updated_at: 200, pull_requests: [{ pr_url: "https://github.com/o/r/pull/2", pr_state: "open" }] }),
+          ],
+        },
+      },
+    ]);
+    const last = await latestRepairWithPr({ apiKey: "cog_k", orgId: "org-1", fetchImpl });
+    expect(calls[0].url).toBe("https://api.devin.ai/v3/organizations/org-1/sessions?first=50&tags=repair");
+    expect(last?.id).toBe("devin-new");
+    expect(last?.prUrl).toBe("https://github.com/o/r/pull/2");
+  });
+
+  it("needs the v3 org API, never blocks a caller, and refreshes at most once a minute", async () => {
+    expect(await latestRepairWithPr({ apiKey: "k", fetchImpl: vi.fn() })).toBeNull();
+    let t = 0;
+    const pr = { pr_url: "https://github.com/o/r/pull/9", pr_state: "open" };
+    const { fetchImpl, calls } = fakeFetch([{ body: { items: [v3Session({ status: "exit", pull_requests: [pr] })] } }]);
+    const deps = { env: { DEVIN_API_KEY: "cog_k", DEVIN_ORG_ID: "org-1" }, fetchImpl, now: () => t, log: () => {} };
+    expect(peekLastRepair(deps)).toBeNull(); // first call answers at once and refreshes in the background
+    await settleLastRepair();
+    t = 30_000;
+    expect(peekLastRepair(deps)?.prUrl).toBe(pr.pr_url);
+    expect(calls).toHaveLength(1);
+  });
+
+  it("keeps the last known repair when a refresh fails", async () => {
+    let t = 0;
+    const pr = { pr_url: "https://github.com/o/r/pull/9", pr_state: "open" };
+    const { fetchImpl } = fakeFetch([{ body: { items: [v3Session({ status: "exit", pull_requests: [pr] })] } }, { status: 503, body: "down" }]);
+    const deps = { env: { DEVIN_API_KEY: "cog_k", DEVIN_ORG_ID: "org-1" }, fetchImpl, now: () => t, log: () => {} };
+    peekLastRepair(deps);
+    await settleLastRepair();
+    t = 120_000;
+    peekLastRepair(deps);
+    await settleLastRepair();
+    expect(peekLastRepair(deps)?.prUrl).toBe(pr.pr_url);
+  });
+
+  it("treats a session that opened its PR and then hit its ACU cap as finished", () => {
+    expect(mapStatus({ status: "suspended", status_detail: "usage_limit_exceeded" }, true)).toBe("finished");
+    expect(mapStatus({ status: "suspended", status_detail: "usage_limit_exceeded" }, false)).toBe("failed");
+  });
+
+  it("sends the ACU cap with a new session", async () => {
+    const { fetchImpl, calls } = fakeFetch([{ body: v3Session() }]);
+    await requestRepair(input, { env: { DEVIN_API_KEY: "cog_k", DEVIN_ORG_ID: "org-1", DEVIN_MAX_ACU: "5" }, fetchImpl, log: () => {} });
+    expect(JSON.parse(String(calls[0].init?.body)).max_acu_limit).toBe(5);
   });
 });

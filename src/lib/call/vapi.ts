@@ -159,6 +159,7 @@ async function vapi(path: string, apiKey: string, fetchImpl: FetchLike, init: Re
   const res = await fetchImpl(`${VAPI_BASE_URL}${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", ...(init.headers ?? {}) },
+    signal: init.signal ?? AbortSignal.timeout(15_000),
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
