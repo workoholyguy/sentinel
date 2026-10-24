@@ -140,6 +140,7 @@ export interface Incident {
   fixes: FixResult[];
   call?: CallState;
   debrief?: CallState; // the follow-up call that tells the customer what the provider said
+  callAt?: string; // when Uplink will phone the provider if the outage hasn't cleared
   repair?: RepairState; // set when Uplink asked Devin to write a new fix
   timeline: TimelineEvent[];
 }
@@ -163,4 +164,20 @@ export interface StatusResponse {
   history: Incident[];
   profile: ProviderProfile;
   lastRepair?: RepairState | null; // newest Devin repair that opened a PR (from the Devin API)
+  llm?: LocalModelState;
+  terminal?: TerminalLine[];
+}
+
+/** The on-device model only runs during an incident: asleep → waking → troubleshooting → done → asleep. */
+export interface LocalModelState {
+  phase: "asleep" | "waking" | "troubleshooting" | "done";
+  model: string;
+  since: string;
+}
+
+/** One line of the agent console: the commands Uplink runs and what came back. */
+export interface TerminalLine {
+  at: string;
+  kind: "cmd" | "out" | "err" | "model" | "info";
+  text: string;
 }

@@ -3,9 +3,14 @@ type Env = Record<string, string | undefined>;
 
 export const DEFAULT_CALL_AFTER_SECONDS = 180;
 
-/** Seconds a provider outage must last before Uplink calls. Simulated (demo) outages call at once. */
+export const DEFAULT_DEMO_CALL_AFTER_SECONDS = 10;
+
+/** Seconds a provider outage must last before Uplink calls. Simulated (demo) outages get a short countdown. */
 export function callDelaySeconds(simulated: boolean, env: Env = process.env): number {
-  if (simulated) return 0;
+  if (simulated) {
+    const d = Number(env.SENTINEL_DEMO_CALL_AFTER_SECONDS);
+    return env.SENTINEL_DEMO_CALL_AFTER_SECONDS !== undefined && Number.isFinite(d) && d >= 0 ? d : DEFAULT_DEMO_CALL_AFTER_SECONDS;
+  }
   const n = Number(env.SENTINEL_CALL_AFTER_SECONDS);
   return env.SENTINEL_CALL_AFTER_SECONDS !== undefined && Number.isFinite(n) && n >= 0 ? n : DEFAULT_CALL_AFTER_SECONDS;
 }

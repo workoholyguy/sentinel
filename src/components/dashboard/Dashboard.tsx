@@ -8,7 +8,8 @@ import { DemoControls } from "./DemoControls";
 import { DevinPanel } from "./DevinPanel";
 import { DiagnosisCard, FixesList, Stepper } from "./Incident";
 import { NetworkMap } from "./NetworkMap";
-import { HistoryList, Timeline, UptimeStats } from "./Sidebar";
+import { HistoryList, UptimeStats } from "./Sidebar";
+import { ActivityPanel, CallCountdown, ModelPill } from "./Console";
 import { formatClock, formatDuration, incidentEnd, incidentTitle, isEscalated, isTerminal, probeFor } from "./format";
 import { type Poll, useNow, useStatusPoll } from "./hooks";
 
@@ -89,6 +90,7 @@ function Header({ data, connected, now }: { data: StatusResponse | null; connect
           <span className={`h-2 w-2 rounded-full ${connected ? "bg-ok" : "bg-warn"}`} />
           <span className={connected ? "text-white/55" : "text-warn"}>{connected ? "Live" : "Reconnecting"}</span>
         </div>
+        <ModelPill llm={data?.llm} />
         <div className="text-[15px] font-medium tabular text-white/60" suppressHydrationWarning>
           {formatClock(now)}
         </div>
@@ -150,7 +152,7 @@ function HealthyView({ data, poll, now }: { data: StatusResponse; poll: Poll; no
       </div>
       <div className="grid grid-cols-[1fr_440px] gap-5">
         <UptimeStats history={data.history} uptimePct={poll.uptimePct} healthySince={poll.healthySince} now={now} />
-        <HistoryList items={data.history.slice(0, 2)} now={now} className="!py-4" />
+        <ActivityPanel terminal={data.terminal ?? []} className="h-[200px]" />
       </div>
     </div>
   );
@@ -201,6 +203,7 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
           </div>
           <div className="mt-7">
             <Stepper status={incident.status} escalated={escalated} />
+            <CallCountdown incident={incident} provider={data.profile.providerName} now={now} />
           </div>
         </section>
 
@@ -213,7 +216,7 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
           <div className="flex min-h-0 flex-col gap-6">
             <FixesList fixes={incident.fixes} status={incident.status} devin={Boolean(incident.repair)} />
             {incident.debrief && <CustomerUpdate call={incident.debrief} name={data.profile.customerName} cause={call?.outcome?.cause} action={call?.outcome?.customerAction} />}
-            {call && <Timeline events={incident.timeline} startedAt={incident.startedAt} className="flex-1" />}
+            {call && <ActivityPanel events={incident.timeline} startedAt={incident.startedAt} terminal={data.terminal ?? []} className="flex-1" />}
             {!call && <HistoryList items={data.history} now={now} className="flex-1" />}
           </div>
         </div>
@@ -231,10 +234,10 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
               lastRepair={data.lastRepair}
               hadPlaybook={incident.fixes.length > 0}
             />
-            <Timeline events={incident.timeline} startedAt={incident.startedAt} className="flex-1" />
+            <ActivityPanel events={incident.timeline} startedAt={incident.startedAt} terminal={data.terminal ?? []} className="flex-1" />
           </div>
         ) : (
-          <Timeline events={incident.timeline} startedAt={incident.startedAt} className="h-full" />
+          <ActivityPanel events={incident.timeline} startedAt={incident.startedAt} terminal={data.terminal ?? []} className="h-full" />
         )}
       </div>
     </div>

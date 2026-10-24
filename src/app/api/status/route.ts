@@ -11,6 +11,14 @@ export async function GET() {
   ensureRunning();
   const s = state();
   const lastRepair = lastDevinRepair(); // never waits on the network
-  const body: StatusResponse = { snapshot: s.snapshot, incident: s.incident, history: s.history.slice(0, 10), profile: demoProfile, lastRepair };
+  const body: StatusResponse = {
+    snapshot: s.snapshot,
+    incident: s.incident,
+    history: s.history.slice(0, 10),
+    profile: demoProfile,
+    lastRepair,
+    llm: s.llm,
+    terminal: (s.terminal ?? []).slice(-120),
+  };
   return NextResponse.json(body);
 }

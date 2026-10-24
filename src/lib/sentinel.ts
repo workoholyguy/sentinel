@@ -1,10 +1,10 @@
 // The Uplink loop: watch → diagnose (on-device) → fix → if it's the provider's fault, call them.
 // One tick every ~1.5 s, started lazily by the first API request.
 import type { Incident, Snapshot } from "./types";
-import { state, now, log } from "./store";
+import { state, now, log, term } from "./store";
 import { demoProfile } from "./profile";
 import { callDelaySeconds, confirmFault } from "./escalation";
-import { explainLocally } from "./llm";
+import { explainLocally, loadModel, localModelName, unloadModel } from "./llm";
 import { ispOutageSnapshot } from "./mock";
 import { askDevinForFix, startCustomerUpdate, diagnoseSnapshot as diagnoseReal, execContext, hasFixFor, pollDevinFix, pollProviderCall, runFixesFor, sampleNetwork, startProviderCall } from "./adapters";
 import type { Diagnosis } from "./types";
@@ -12,8 +12,57 @@ import type { Diagnosis } from "./types";
 const TICK_MS = 1500;
 const DONE: Incident["status"][] = ["resolved", "ticketed", "needs_human"];
 const QUEUE_RETRY_MS = 10_000;
+const PROBE_LOG_MS = 10_000;
+
+// ---- the agent console: what Uplink actually runs, and what came back ----------------------
+const PROBE_CMD: Record<string, (label: string) => string> = {
+  "wifi-link": () => "$ networksetup -getairportnetwork en0",
+  "gateway-route": () => "$ route -n get default",
+  "dns-system": (l) => `> dns lookup ${l.replace(/^DNS lookup /, "")}`,
+  "http-cloudflare": () => "> https GET 1.1.1.1",
+};
+
+function probeLines(snap: Snapshot) {
+  for (const p of snap.probes) {
+    const host = `${p.label} ${p.detail ?? ""}`.match(/\b\d{1,3}(?:\.\d{1,3}){3}\b/)?.[0] ?? (p.node === "isp" ? "<provider edge>" : p.label);
+    const cmd = PROBE_CMD[p.id]?.(p.label) ?? (p.id.startsWith("ping") ? `$ ping -c 3 ${host}` : `> ${p.label}`);
+    term("cmd", cmd);
+    const stats = [p.latencyMs != null ? `${Math.round(p.latencyMs * 10) / 10} ms` : "", p.lossPct != null ? `${p.lossPct}% loss` : "", p.detail ?? ""].filter(Boolean).join(" · ");
+    term(p.status === "ok" ? "out" : "err", `${p.status === "ok" ? "ok" : p.status === "down" ? "✕ failed" : "! degraded"}${stats ? ` · ${stats}` : ""}`);
+  }
+}
+
+// ---- the local model only runs while something is wrong -----------------------------------
+let loading: Promise<boolean> | null = null;
+
+function setModel(phase: "asleep" | "waking" | "troubleshooting" | "done") {
+  state().llm = { phase, model: localModelName, since: now() };
+}
+
+function wakeModel(reason: string): Promise<boolean> {
+  const s = state();
+  if (s.llm.phase !== "asleep" && loading) return loading;
+  if (s.llm.phase !== "asleep") return Promise.resolve(true);
+  setModel("waking");
+  term("model", `$ ollama run ${localModelName}   # ${reason}`);
+  const t0 = Date.now();
+  loading = loadModel().then((ok) => {
+    term(ok ? "out" : "err", ok ? `model loaded in ${((Date.now() - t0) / 1000).toFixed(1)} s` : "couldn't load the local model (is Ollama running?)");
+    loading = null;
+    return ok;
+  });
+  return loading;
+}
+
+function sleepModel() {
+  if (state().llm.phase === "asleep") return;
+  setModel("asleep");
+  term("model", `$ ollama stop ${localModelName}   # network healthy — model back to sleep`);
+  void unloadModel();
+}
 // The evidence each Devin request was made with, so a queued one goes out with the fault, not today's healthy network.
 const evidence = new Map<string, Snapshot>();
+const probeShownAt = new Map<string, number>();
 const DRY_RUN = process.env.SENTINEL_DRY_RUN !== "0"; // real system changes only when explicitly enabled
 
 function injected(): Snapshot | null {
@@ -74,6 +123,7 @@ async function tick() {
     const d = diagnoseSnapshot(s.snapshot);
     if (!d) {
       s.suspect = undefined;
+      if (!inc || DONE.includes(inc.status)) sleepModel();
       // Healthy again: archive a finished incident after it has been on screen for a while.
       if (inc && Date.now() - Date.parse(inc.timeline.at(-1)?.at ?? inc.startedAt) > 20000) {
         s.history.unshift(inc);
@@ -84,7 +134,13 @@ async function tick() {
     if (inc && DONE.includes(inc.status)) return; // keep showing the result
     // One bad sample is a blip: only a fault that holds for a few seconds becomes an incident.
     const check = confirmFault(s.suspect, d.fault, Date.now(), s.demo !== "none");
+    const firstSighting = !s.suspect;
     s.suspect = check.suspect;
+    if (firstSighting) {
+      term("info", `something looks wrong (${d.fault.replaceAll("_", " ").toLowerCase()}) — checking it isn't a blip`);
+      probeLines(s.snapshot);
+      void wakeModel("fault suspected — waking the local model");
+    }
     if (!check.confirmed) return;
     s.suspect = undefined;
     const fresh = newIncident(s.demo !== "none");
@@ -94,12 +150,21 @@ async function tick() {
     fresh.status = "diagnosing";
     fresh.diagnosis = d;
     log(fresh, "diagnosis", `Diagnosed ${d.fault.replaceAll("_", " ").toLowerCase()} (${Math.round(d.confidence * 100)}% confidence)`);
-    explainLocally(d).then((text) => {
+    term("info", `incident confirmed: ${d.summary}`);
+    void (async () => {
+      await wakeModel("outage confirmed — waking the local model");
+      setModel("troubleshooting");
+      term("model", `> ${localModelName} troubleshoot "${d.fault.toLowerCase()}" (${d.evidence.length} pieces of evidence)`);
+      const text = await explainLocally(d);
       if (fresh.diagnosis && text) {
         fresh.diagnosis.explanation = text.replace(/^here'?s[^:\n]*:\s*/i, "");
         log(fresh, "info", "Explained on-device by the local model");
+        term("out", fresh.diagnosis.explanation);
+      } else {
+        term("err", "the local model didn't answer");
       }
-    });
+      if (state().llm.phase === "troubleshooting") setModel("done");
+    })();
     return;
   }
 
@@ -158,6 +223,14 @@ async function tick() {
       const fixes = await runFixesFor(inc.diagnosis.fault, execContext(DRY_RUN), async () => !diagnoseSnapshot(await sample()));
       inc.fixes.push(...fixes);
       for (const f of fixes) log(inc, "fix", `${f.actions.join(" · ") || f.pluginId}${f.ok ? " — fixed" : f.detail ? ` — ${f.detail}` : ""}`);
+      term("info", `trying the playbook${DRY_RUN ? " (rehearsal: commands are recorded, not run)" : ""}`);
+      for (const f of fixes) {
+        // Plugins report the commands they ran; simulated steps come back as plain notes.
+        for (const a of f.actions) term(/^[A-Z]/.test(a) ? "info" : "cmd", /^[A-Z]/.test(a) ? `# ${a}` : `$ ${a}`);
+        term(f.ok ? "out" : "err", `${f.pluginId}: ${f.ok ? "fixed" : `✕ ${f.detail ?? "didn't help"}`}`);
+      }
+      term("info", "re-probing the network…");
+      probeLines(s.snapshot);
       const healed = fixes.some((f) => f.ok) || !diagnoseSnapshot(await sample());
       if (healed) {
         inc.status = "resolved";
@@ -181,6 +254,16 @@ async function tick() {
     if (inc.status === "escalating") {
       const wait = callDelaySeconds(inc.simulated);
       const lasted = (Date.now() - Date.parse(inc.startedAt)) / 1000;
+      if (!inc.callAt) {
+        inc.callAt = new Date(Date.parse(inc.startedAt) + wait * 1000).toISOString();
+        term("info", `calling ${demoProfile.providerName} at ${new Date(inc.callAt).toLocaleTimeString("en-US", { hour12: false })} unless it clears first`);
+      }
+      const lastShown = Date.parse(inc.timeline.findLast?.((e) => e.kind === "probe")?.at ?? inc.startedAt);
+      if (lasted < wait && Date.now() - Math.max(lastShown, probeShownAt.get(inc.id) ?? 0) > PROBE_LOG_MS) {
+        probeShownAt.set(inc.id, Date.now());
+        term("info", "still down? re-checking…");
+        probeLines(s.snapshot);
+      }
       if (lasted < wait) {
         if (!diagnoseSnapshot(s.snapshot)) {
           inc.status = "resolved";
@@ -203,6 +286,7 @@ async function tick() {
       }
       inc.status = "calling";
       log(inc, "call", `Calling ${demoProfile.providerName} support`);
+      term("cmd", `> vapi call ${demoProfile.providerName} support (${demoProfile.supportNumber.replace(/\d(?=\d{4})/g, "•")})`);
       return;
     }
 
@@ -275,8 +359,13 @@ const loop = globalThis as unknown as { __sentinelTick?: unknown; __sentinelTime
 export function ensureRunning() {
   if (loop.__sentinelTick === tick) return;
   if (loop.__sentinelTimer) clearInterval(loop.__sentinelTimer);
+  const firstStart = !loop.__sentinelTick;
   loop.__sentinelTick = tick;
   state().started = true;
+  if (firstStart) {
+    term("info", "Uplink is watching your network · local model asleep until something breaks");
+    void unloadModel();
+  }
   // A slow sample (traceroute can take ~4 s) must not overlap the next one,
   // but a tick stuck for 15 s+ must not stop monitoring either.
   let tickStarted = 0;
