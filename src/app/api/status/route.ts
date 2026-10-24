@@ -5,6 +5,7 @@ import { ensureRunning } from "@/lib/sentinel";
 import { demoProfile } from "@/lib/profile";
 import { lastDevinRepair } from "@/lib/adapters";
 import { outageActive } from "@/lib/outage";
+import { callingEnabled } from "@/lib/calling";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export async function GET() {
     llm: s.llm,
     terminal: (s.terminal ?? []).slice(-120),
     outage: outageActive(),
+    calling: callingEnabled(),
     watchdog: s.watchdog,
   };
   return NextResponse.json(body);

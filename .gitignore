@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Mac app build output
 mac/build/
+
+# the calling switch (on/off), saved by the app
+.uplink-calling

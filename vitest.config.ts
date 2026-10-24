@@ -6,4 +6,6 @@ export default defineConfig({
   css: { postcss: {} },
   resolve: { alias: { "@": new URL("./src", import.meta.url).pathname } },
   esbuild: { jsx: "automatic" },
+  // Tests never read this machine's calling switch (.uplink-calling): no file means on.
+  test: { env: { UPLINK_CALLING_FILE: "/nonexistent/uplink-calling" } },
 });

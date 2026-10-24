@@ -168,6 +168,7 @@ export interface StatusResponse {
   llm?: LocalModelState;
   terminal?: TerminalLine[];
   outage?: boolean; // the demo's real outage switch is on
+  calling?: boolean; // the calling switch: off means no phone rings
   watchdog?: WatchdogState;
 }
 

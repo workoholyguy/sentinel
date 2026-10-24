@@ -1,5 +1,6 @@
 // Facade: real Vapi call when configured, otherwise the scripted mock.
 import type { CallState, Incident, ProviderProfile } from "../types";
+import { callingEnabled } from "../calling";
 import { createMockCall, type MockCall } from "./mock";
 import { getCallState, startDebriefCall, startProviderCall } from "./vapi";
 
@@ -15,12 +16,15 @@ function vapiConfig(env: Env) {
   return apiKey && phoneNumberId && /^\+\d{8,15}$/.test(target) ? { apiKey, phoneNumberId } : null;
 }
 
+// Placing a call also needs the calling switch on (following one already under way does not).
+const dialConfig = (env: Env) => (callingEnabled() ? vapiConfig(env) : null);
+
 export function isLiveCalling(env: Env = process.env): boolean {
-  return vapiConfig(env) !== null;
+  return dialConfig(env) !== null;
 }
 
 export async function startCall(incident: Incident, profile: ProviderProfile, env: Env = process.env): Promise<CallState> {
-  const cfg = vapiConfig(env);
+  const cfg = dialConfig(env);
   if (cfg) return startProviderCall({ incident, profile, ...cfg });
   const call = createMockCall(incident, profile);
   mockCalls.set(call.id, call);
@@ -35,7 +39,7 @@ export function customerNumber(env: Env = process.env): string | null {
 
 /** Phone the customer with what the provider said. Null when there's no live calling or no customer number. */
 export async function startDebrief(incident: Incident, profile: ProviderProfile, env: Env = process.env): Promise<CallState | null> {
-  const cfg = vapiConfig(env);
+  const cfg = dialConfig(env);
   const to = customerNumber(env);
   if (!cfg || !to) return null;
   return startDebriefCall({ incident, profile, ...cfg, customerNumber: to });

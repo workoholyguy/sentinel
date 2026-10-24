@@ -53,7 +53,7 @@ const ANALYSIS_WAIT_MS = 20_000; // Vapi fills in the call's outcome shortly aft
 const LATE_MS = 120_000; // never dial the customer later than this after the call: the laptop takes over at 3 min
 const FOLLOW_LIMIT_MS = 30 * 60 * 1000;
 const KEEP_MS = 60_000; // keep reporting the customer call for a minute, so the laptop can't miss it
-const VERSION = "2026-10-24.4-claim"; // shown on /status: tells when the object runs new code after a deploy
+const VERSION = "2026-10-24.5-calling-switch"; // shown on /status: tells when the object runs new code after a deploy
 
 // Still on the provider call, with the customer to phone when it ends.
 const following = (c?: Called | null): c is Called => Boolean(c?.ok && c.id && c.debriefWith && !c.debrief);
@@ -107,8 +107,14 @@ export class Watchdog {
     }
 
     if (req.method === "POST" && pathname === "/disarm") {
-      // A clean stop: don't call anyone later. A call already under way still gets its customer update.
-      if (!following(await store.get<Called>("called"))) await store.deleteAlarm();
+      // A clean stop: don't call anyone later. A call already under way still gets its customer update —
+      // unless calling was switched off (`all`), when no phone may ring at all.
+      const { all } = (await req.json().catch(() => ({}))) as { all?: boolean };
+      const called = await store.get<Called>("called");
+      if (all && following(called)) {
+        await store.put("called", { ...called, debrief: { at: Date.now(), ok: false, skipped: true, error: "calling switched off" } });
+      }
+      if (all || !following(called)) await store.deleteAlarm();
       return Response.json({ ok: true, armed: false });
     }
 

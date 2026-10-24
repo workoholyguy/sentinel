@@ -230,14 +230,18 @@ export async function cloudIsCalling(inc: Incident): Promise<boolean> {
   return dark;
 }
 
-/** Stop the cloud from calling (we're shutting down on purpose, not going dark). */
-export async function disarm(env: Env = process.env): Promise<boolean> {
+/**
+ * Stop the cloud from calling: we're shutting down on purpose, not going dark. `all` (calling switched off)
+ * also cancels the customer update for a call it is still following, so no phone rings at all.
+ */
+export async function disarm(env: Env = process.env, all = false): Promise<boolean> {
   if (!watchdogEnabled(env)) return false;
   try {
     const res = await fetch(`${env.WATCHDOG_URL!.replace(/\/$/, "")}/disarm`, {
       method: "POST",
-      headers: { authorization: `Bearer ${env.WATCHDOG_TOKEN}` },
-      signal: AbortSignal.timeout(2000),
+      headers: { authorization: `Bearer ${env.WATCHDOG_TOKEN}`, "content-type": "application/json" },
+      body: JSON.stringify({ all }),
+      signal: AbortSignal.timeout(4000),
     });
     return res.ok;
   } catch {

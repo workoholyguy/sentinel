@@ -198,6 +198,20 @@ describe("cloud watchdog: the customer hears back while the house is still dark"
     expect(r.called).toHaveProperty("ackedAt");
   });
 
+  it("calling switched off: cancels the customer update for a call it's following, and calls no one", async () => {
+    const h = house();
+    await h.beat(armed);
+    later(21_000);
+    await h.dog.alarm();
+    await h.dog.fetch(new Request("https://w/disarm", { method: "POST", body: JSON.stringify({ all: true }) }));
+    expect(h.alarm()).toBeNull();
+    ended({ summary: "fixed", ticketNumber: "PF-1" });
+    later(5000);
+    await h.dog.alarm(); // even if an alarm still fired
+    expect(posted).toHaveLength(1);
+    expect((h.data.get("called") as { debrief: { error: string } }).debrief.error).toBe("calling switched off");
+  });
+
   it("without a customer number, places the provider call only and forgets it on ack", async () => {
     const h = house();
     await h.beat({ callBody: { assistant: {} } });
