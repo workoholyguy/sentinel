@@ -158,58 +158,25 @@ html {
 
 /* ───────────────────────── landing ───────────────────────── */
 
-@keyframes drift {
-  from { transform: translateX(0); }
-  to { transform: translateX(-6%); }
+/* packets flowing along an SVG link */
+@keyframes flow {
+  to { stroke-dashoffset: -15; }
 }
-.drift {
-  animation: drift var(--drift, 40s) ease-in-out infinite alternate;
-}
-
-@keyframes bob {
-  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
-  50% { transform: translateY(-14px) rotate(calc(var(--tilt, 0deg) * -1)); }
-}
-.bob {
-  animation: bob var(--bob, 6s) ease-in-out infinite;
+.flow {
+  stroke-dasharray: 1 14;
+  animation: flow 0.9s linear infinite;
 }
 
-@keyframes twinkle {
-  0%, 100% { opacity: 0.15; }
-  50% { opacity: 0.95; }
+/* the same, for a horizontal HTML link */
+@keyframes flow-x {
+  to { background-position-x: 12px; }
 }
-.twinkle {
-  animation: twinkle var(--tw, 3s) ease-in-out infinite;
-}
-
-@keyframes blink {
-  0%, 92%, 100% { transform: scaleY(1); }
-  95% { transform: scaleY(0.1); }
-}
-.blink {
-  animation: blink 4.5s ease-in-out infinite;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-@keyframes zap {
-  0%, 100% { opacity: 0; }
-  4%, 9% { opacity: 1; }
-  6% { opacity: 0.3; }
-  13% { opacity: 0; }
-}
-.zap {
-  animation: zap 2.6s linear infinite;
-}
-
-@keyframes sparkle {
-  0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
-  50% { opacity: 1; transform: scale(1) rotate(45deg); }
-}
-.sparkle {
-  animation: sparkle 2.4s ease-in-out infinite;
-  transform-box: fill-box;
-  transform-origin: center;
+.flow-x {
+  background-image: repeating-linear-gradient(90deg, currentColor 0 3px, transparent 3px 12px);
+  background-size: 12px 2px;
+  background-repeat: repeat-x;
+  background-position-y: center;
+  animation: flow-x 0.6s linear infinite;
 }
 
 @keyframes caret {

@@ -106,8 +106,9 @@ export function ProductDemo() {
         Watch UPLink handle a real outage.
       </div>
 
-      <div className="rounded-[28px] bg-gradient-to-b from-white/70 to-white/40 p-2 shadow-[0_40px_100px_-30px_rgb(49_46_129/0.45)] ring-1 ring-white/80 backdrop-blur-sm sm:p-3">
-        <div className="grid overflow-hidden rounded-[20px] bg-white ring-1 ring-neutral-200/70 md:grid-cols-[228px_1fr]">
+      <div className="relative rounded-[28px] bg-gradient-to-br from-indigo-200 via-violet-200 to-sky-200 p-2 shadow-[0_40px_100px_-40px_rgb(49_46_129/0.55)] sm:p-3">
+        <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-[linear-gradient(rgb(255_255_255/0.35)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.35)_1px,transparent_1px)] [background-size:24px_24px]" />
+        <div className="relative grid overflow-hidden rounded-[20px] bg-white ring-1 ring-black/5 md:grid-cols-[228px_1fr]">
           <aside className="hidden flex-col border-r border-neutral-200/80 bg-neutral-50/60 p-3 md:flex">
             <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
               <LogoMark className="h-7 w-7" />

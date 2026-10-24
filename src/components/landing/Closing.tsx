@@ -5,8 +5,6 @@ import { ArrowRight, Check, Globe, Laptop, Monitor, type LucideIcon } from "luci
 import Link from "next/link";
 import { type FormEvent, useEffect, useState } from "react";
 import { DevinMark, LogoMark } from "./brand";
-import { CloudBuddy } from "./CloudBuddy";
-import { Sky } from "./Sky";
 import { WordmarkCanvas } from "./WordmarkCanvas";
 
 const PLATFORMS: Array<{ icon: LucideIcon; name: string }> = [
@@ -82,18 +80,50 @@ function LiveStatus() {
   );
 }
 
+/** UPLink's mark sending signal outward: static rings plus pulses that keep leaving the logo. */
+function Broadcast() {
+  return (
+    <svg viewBox="-700 -700 1400 1400" className="absolute left-1/2 top-[188px] h-[1400px] w-[1400px] -translate-x-1/2 -translate-y-1/2" aria-hidden="true">
+      <defs>
+        <radialGradient id="broadcast-glow">
+          <stop offset="0" stopColor="#6366f1" stopOpacity="0.5" />
+          <stop offset="0.45" stopColor="#7c3aed" stopOpacity="0.14" />
+          <stop offset="1" stopColor="#7c3aed" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle r="700" fill="url(#broadcast-glow)" />
+      {[110, 200, 310, 440, 590].map((r) => (
+        <circle key={r} r={r} fill="none" stroke="rgb(255 255 255 / 0.07)" strokeDasharray={r % 2 ? "2 8" : undefined} />
+      ))}
+      {[0, 1.5, 3].map((delay) => (
+        <circle key={delay} r="60" fill="none" stroke="#a5b4fc" strokeWidth="1.5">
+          <animate attributeName="r" from="56" to="640" dur="4.5s" begin={`${delay}s`} repeatCount="indefinite" />
+          <animate attributeName="stroke-opacity" from="0.55" to="0" dur="4.5s" begin={`${delay}s`} repeatCount="indefinite" />
+        </circle>
+      ))}
+    </svg>
+  );
+}
+
 export function Closing() {
   return (
-    <section id="get-started" className="relative scroll-mt-0 overflow-hidden pt-52 sm:pt-60">
-      <Sky variant="bottom" />
+    <section id="get-started" className="relative overflow-hidden rounded-t-[36px] bg-[#0f0d2e] pt-28 sm:rounded-t-[56px] sm:pt-32">
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div className="absolute inset-0 bg-[radial-gradient(rgb(255_255_255/0.07)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(60%_45%_at_50%_20%,black,transparent)]" />
+        <Broadcast />
+      </div>
 
       <div className="relative mx-auto flex max-w-[1200px] flex-col items-center px-5 text-center">
-        <motion.div initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
-          <div className="bob" style={{ ["--bob" as string]: "6s" }}>
-            <CloudBuddy mood="happy" className="w-32 sm:w-40" />
-          </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="rounded-[26px] bg-white/10 p-2 shadow-[0_0_60px_rgb(99_102_241/0.6)] ring-1 ring-white/20 backdrop-blur"
+        >
+          <LogoMark className="h-16 w-16 sm:h-[72px] sm:w-[72px]" />
         </motion.div>
-        <h2 className="mt-4 text-[clamp(42px,7vw,92px)] font-semibold leading-[0.98] tracking-[-0.055em] text-white">
+        <h2 className="mt-12 text-[clamp(42px,7vw,92px)] font-semibold leading-[0.98] tracking-[-0.055em] text-white">
           Never sit on hold
           <br />
           again.
