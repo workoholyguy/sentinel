@@ -8,8 +8,9 @@ const geistSans = GeistSans;
 const geistMono = GeistMono;
 
 export const metadata: Metadata = {
-  title: "Sentinel · Network Mission Control",
-  description: "Watches your network, diagnoses outages on-device, fixes them, and calls your provider when it's their fault.",
+  title: "UPLink · Your network's advocate",
+  description:
+    "An AI agent for your office network: diagnoses outages on-device, fixes what it can, calls your provider with proof when it can't, and hands new faults to Devin.",
 };
 
 export const viewport: Viewport = {
