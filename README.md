@@ -37,14 +37,15 @@ flowchart LR
 **Devin built it.** Five Devin cloud sessions ran in parallel, one slice each — monitor + diagnosis, repair
 plugins, the call agent, the dashboard, and the Devin runtime client — against one shared contract
 (`src/lib/types.ts`), with rules in `AGENTS.md` and a brief per session. Their commits (authored as
-`omadjitov1`, the git identity on the Devin machines) are about three quarters of the code: 4,609 lines.
+`omadjitov1`, the git identity on the Devin machines, each co-authored by Devin AI) plus the repair Devin
+opened at runtime are 4,796 of the 6,596 lines committed here (~73%; lockfile and scaffold excluded).
 
 **Devin is inside it.** When Sentinel meets a fault its playbook can't fix, it calls the Devin API with the
 probe evidence — plus the local model's explanation once it's ready, and any fixes that really ran and failed.
 Devin writes the repair and opens a PR, and the dashboard follows the session live. Example:
 [#1 · repair: ipv6 blackhole](https://github.com/workoholyguy/sentinel/pull/1) — from the dashboard's
 simulated IPv6-blackhole fault, Devin wrote a 187-line plugin with 10 tests and opened the PR about
-2½ minutes after Sentinel sent the report. Once merged, it joins the playbook.
+2½ minutes after Sentinel sent the report. It's merged into `main`; Sentinel loads it at runtime on Node 22.18+.
 
 ## Run it (macOS)
 
@@ -80,4 +81,4 @@ real pipeline on it: **Simulate ISP outage** (→ the call) and **Unknown fault*
 ## Stack
 
 Next.js 15 · React 19 · TypeScript · Tailwind v4 · framer-motion · Ollama (Llama 3.2 3B) · Vapi · Twilio ·
-Devin API · Vitest (156 tests).
+Devin API · Vitest (170 tests).
