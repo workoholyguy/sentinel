@@ -1,12 +1,28 @@
 import { useId } from "react";
 
-/** Uplink mark: stacked chevrons, signal going up. */
+// Uplink mark: a U, a rising 1-shaped arrow, and the green "link up" dot between them.
+const MARK_VIEWBOX = "408 316 530 530";
+const MARK_U = "M413 408L505 484Q523 499 523 522L523 655Q523 705 580 705Q615 705 645 685L725 627L725 715Q725 735 708 750L655 792Q625 815 575 815Q413 815 413 680Z";
+const MARK_ARROW = "M933 345L838 345Q805 345 782 364L660 466L660 510L738 510Q748 510 756 503L808 461Q825 450 825 470L825 702L908 633Q933 612 933 584Z";
+
+/** The U takes the text colour, so the mark reads on white (dark U) and on black (white U). */
 export function LogoMark({ className = "h-6 w-6" }: { className?: string }) {
+  const id = useId();
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M4.5 10.5 12 4l7.5 6.5" />
-      <path d="M4.5 15.25 12 8.75l7.5 6.5" />
-      <path d="M4.5 20 12 13.5l7.5 6.5" />
+    <svg viewBox={MARK_VIEWBOX} className={className} aria-hidden="true">
+      <defs>
+        <linearGradient id={`${id}-arrow`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#a3a3a3" />
+          <stop offset="1" stopColor="#525252" />
+        </linearGradient>
+        <linearGradient id={`${id}-dot`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#bef264" />
+          <stop offset="1" stopColor="#65c11b" />
+        </linearGradient>
+      </defs>
+      <path d={MARK_U} fill="currentColor" />
+      <path d={MARK_ARROW} fill={`url(#${id}-arrow)`} />
+      <circle cx="673" cy="583" r="43" fill={`url(#${id}-dot)`} />
     </svg>
   );
 }
