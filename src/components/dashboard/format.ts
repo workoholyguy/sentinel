@@ -70,6 +70,8 @@ export function formatPhone(e164: string): string {
 export function linkLabel(p: Probe | undefined): string {
   if (!p) return "—";
   if (p.latencyMs != null) return `${p.latencyMs < 10 ? p.latencyMs.toFixed(1) : Math.round(p.latencyMs)} ms`;
+  // Interface chatter ("associated on en0", "172.20.10.1 via en0") isn't worth the space.
+  if (p.status === "ok" && p.detail && /\b(en\d+|via|associated)\b/.test(p.detail)) return "";
   // Long probe details ("SYN sent, no reply after 10 s") don't fit between two nodes.
   if (p.detail && p.detail.length <= 14) return p.detail;
   return p.status === "down" ? "no reply" : p.status === "degraded" ? "slow" : (p.detail ?? "—");

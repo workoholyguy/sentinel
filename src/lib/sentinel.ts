@@ -241,7 +241,19 @@ async function tick() {
   }
 }
 
+const DEVIN_REPEAT_MS = 6 * 60 * 60 * 1000;
+
 async function handOffToDevin(inc: Incident, snapshot: Snapshot) {
+  const s = state();
+  const fault = inc.diagnosis?.fault ?? "UNKNOWN";
+  s.devinAsked ??= {};
+  // A chronic fault would otherwise start a paid Devin session after every incident.
+  if (Date.now() - (s.devinAsked[fault] ?? 0) < DEVIN_REPEAT_MS) {
+    inc.status = "needs_human";
+    log(inc, "info", "Devin is already writing a repair for this kind of fault — not asking again");
+    return;
+  }
+  s.devinAsked[fault] = Date.now();
   evidence.set(inc.id, snapshot);
   const repair = await askDevinForFix(inc, snapshot);
   if (repair?.status === "queued") {

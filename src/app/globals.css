@@ -11,7 +11,7 @@
   --color-warn: #fbbf24;
   --color-bad: #ff4d6d;
   --color-unk: #5b6577;
-  --tracking-label: 0.18em;
+  --tracking-label: 0;
 }
 
 @theme inline {
@@ -30,7 +30,7 @@ body {
   background: #04060a;
   color: #e6edf7;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "ss01", "cv11";
+  font-feature-settings: "cv11";
 }
 
 body {
@@ -38,25 +38,20 @@ body {
 }
 
 .bg-grid {
-  background-image: radial-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 100%);
+  display: none;
 }
 
 .ambient {
-  background: radial-gradient(60% 50% at 50% -10%, rgb(var(--ambient) / 0.16), transparent 70%),
-    radial-gradient(40% 40% at 100% 100%, rgb(var(--ambient) / 0.06), transparent 70%);
-  transition: background 1.2s ease;
+  display: none;
 }
 
 @layer components {
 .panel {
-  @apply rounded-3xl border border-white/[0.06] bg-ink-850/70 backdrop-blur-xl;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 30px 60px -30px rgb(0 0 0 / 0.6);
+  @apply rounded-2xl border border-white/[0.07] bg-white/[0.025];
 }
 
 .label {
-  @apply font-mono text-[11px] uppercase tracking-label text-white/40;
+  @apply text-[13px] font-medium text-white/45;
 }
 }
 

@@ -12,6 +12,7 @@ export interface SentinelState {
   busy: boolean; // a step (fix / call start) is in flight
   started: boolean;
   suspect?: { fault: string; since: number }; // a fault seen but not yet held long enough to count
+  devinAsked: Record<string, number>; // fault → when Devin was last asked to write a repair for it
 }
 
 const g = globalThis as unknown as { __sentinel?: SentinelState };
@@ -25,6 +26,7 @@ export function state(): SentinelState {
       demo: "none",
       busy: false,
       started: false,
+      devinAsked: {},
     };
   }
   return g.__sentinel;

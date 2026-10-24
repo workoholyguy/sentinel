@@ -24,7 +24,7 @@ export function Timeline({ events, startedAt, className = "" }: { events: Timeli
               data-kind={e.kind}
             >
               <span className="pt-px font-mono text-[12px] tabular text-white/40">T+{formatDuration(Date.parse(e.at) - t0)}</span>
-              <span className={`mt-[6px] h-2 w-2 rounded-full ${pos === 0 ? "bg-accent shadow-[0_0_10px_#38e1ff]" : "bg-white/20"}`} />
+              <span className={`mt-[6px] h-2 w-2 rounded-full ${pos === 0 ? "bg-accent " : "bg-white/20"}`} />
               <span className={`text-[14px] leading-snug ${pos === 0 ? "text-white/90" : "text-white/55"}`}>{e.text}</span>
             </motion.li>
           ))}
@@ -54,7 +54,7 @@ export function HistoryList({ items, now, className = "" }: { items: Incident[];
                   {h.simulated && " · simulated"}
                 </div>
               </div>
-              <span className="font-mono text-[10px] uppercase tracking-label text-white/40">
+              <span className="font-mono text-[10px] text-white/40">
                 {called
                   ? (h.call?.outcome?.ticketNumber ?? "ISP called")
                   : h.repair?.status === "finished"
@@ -100,10 +100,10 @@ export function UptimeStats({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 + i * 0.06 }}
-          className="panel p-6"
+          className="panel p-5"
         >
           <div className="label">{s.label}</div>
-          <div className="mt-3 text-[44px] font-semibold leading-none tracking-tighter tabular">{s.value}</div>
+          <div className="mt-2 text-[30px] font-semibold leading-none tracking-tight tabular">{s.value}</div>
         </motion.div>
       ))}
     </div>

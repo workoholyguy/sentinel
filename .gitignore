@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local app launcher
 .sentinel.log
+
+# Mac app build output
+mac/build/

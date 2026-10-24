@@ -74,10 +74,10 @@ function Header({ data, connected, now }: { data: StatusResponse | null; connect
       <div className="flex items-center gap-4">
         <div className="relative grid h-10 w-10 place-items-center">
           <span className="breathe absolute inset-0 rounded-full border border-accent/60" />
-          <span className="h-3 w-3 rounded-full bg-accent shadow-[0_0_18px_#38e1ff]" />
+          <span className="h-3 w-3 rounded-full bg-accent " />
         </div>
         <div>
-          <div className="font-mono text-[15px] font-semibold tracking-[0.42em] text-white">UPLINK</div>
+          <div className="text-[17px] font-semibold tracking-tight text-white">Uplink</div>
           <div className="text-[13px] text-white/40">
             Network mission control{data ? ` · ${data.profile.planName} · ${data.profile.providerName}` : ""}
           </div>
@@ -85,11 +85,11 @@ function Header({ data, connected, now }: { data: StatusResponse | null; connect
       </div>
       <div className="flex items-center gap-6">
         {data?.incident?.simulated && <SimulatedTag />}
-        <div className="flex items-center gap-2 font-mono text-[12px] uppercase tracking-label">
-          <span className={`h-2 w-2 rounded-full ${connected ? "alarm bg-ok" : "bg-warn"}`} />
+        <div className="flex items-center gap-2 font-mono text-[12px]">
+          <span className={`h-2 w-2 rounded-full ${connected ? "bg-ok" : "bg-warn"}`} />
           <span className={connected ? "text-white/55" : "text-warn"}>{connected ? "Live" : "Reconnecting"}</span>
         </div>
-        <div className="font-mono text-[22px] font-light tabular text-white/80" suppressHydrationWarning>
+        <div className="text-[15px] font-medium tabular text-white/60" suppressHydrationWarning>
           {formatClock(now)}
         </div>
       </div>
@@ -100,7 +100,7 @@ function Header({ data, connected, now }: { data: StatusResponse | null; connect
 function SimulatedTag() {
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full border border-warn/30 bg-warn/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-warn"
+      className="inline-flex items-center gap-1.5 rounded-full border border-warn/30 bg-warn/10 px-3 py-1 font-mono text-[11px] text-warn"
       data-testid="simulated-tag"
       title="This outage was triggered for the demo"
     >
@@ -112,7 +112,7 @@ function SimulatedTag() {
 function Boot() {
   return (
     <div className="flex flex-1 items-center justify-center">
-      <div className="flex items-center gap-3 font-mono text-sm uppercase tracking-label text-white/40">
+      <div className="flex items-center gap-3 font-mono text-sm text-white/40">
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
         Connecting to Uplink
       </div>
@@ -129,17 +129,17 @@ function HealthyView({ data, poll, now }: { data: StatusResponse; poll: Poll; no
       <div className="flex items-end justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-ok shadow-[0_0_14px_#34d399]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-ok " />
             <span className="label !text-ok/80">Status</span>
           </div>
-          <h1 className="mt-3 text-[88px] font-semibold leading-[0.95] tracking-[-0.045em]">All systems normal</h1>
-          <p className="mt-4 text-xl text-white/45">
+          <h1 className="mt-2 text-[48px] font-semibold leading-none tracking-[-0.03em]">All systems normal</h1>
+          <p className="mt-3 text-[16px] text-white/45">
             {healthy} of {nodes.length} hops healthy · checked every 1.5 s · diagnosed on-device
           </p>
         </div>
         <div className="pb-3 text-right">
           <div className="label">Round trip to internet</div>
-          <div className="mt-2 font-mono text-[56px] font-light leading-none tabular text-white">
+          <div className="mt-2 text-[40px] font-semibold leading-none tracking-tight tabular text-white">
             {rtt != null ? Math.round(rtt) : "—"}
             <span className="ml-1 text-2xl text-white/40">ms</span>
           </div>
@@ -179,7 +179,7 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2.5">
-                <span className={`h-2.5 w-2.5 rounded-full ${human ? "bg-warn" : done || informing ? "bg-ok" : "alarm bg-bad"}`} />
+                <span className={`h-2.5 w-2.5 rounded-full ${human ? "bg-warn" : done || informing ? "bg-ok" : "bg-bad"}`} />
                 <span className={`label ${human ? "!text-warn/90" : done || informing ? "!text-ok/80" : "!text-bad/90"}`}>
                   {human
                     ? "Needs a human"
@@ -192,11 +192,11 @@ function IncidentView({ data, incident, now }: { data: StatusResponse; incident:
                         : "Active incident"}
                 </span>
               </div>
-              <h1 className="mt-2 text-[44px] font-semibold leading-none tracking-[-0.035em]">{incidentTitle(incident)}</h1>
+              <h1 className="mt-2 text-[36px] font-semibold leading-tight tracking-[-0.025em]">{incidentTitle(incident)}</h1>
             </div>
             <div className="text-right">
               <div className="label">{ended != null ? (incident.status === "resolved" ? "Resolved in" : "Handled in") : "Elapsed"}</div>
-              <div className="mt-1 font-mono text-[40px] font-light leading-none tabular">{formatDuration(end - t0)}</div>
+              <div className="mt-1 text-[32px] font-semibold leading-none tracking-tight tabular">{formatDuration(end - t0)}</div>
             </div>
           </div>
           <div className="mt-7">

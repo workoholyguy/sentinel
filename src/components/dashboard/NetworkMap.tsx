@@ -70,7 +70,7 @@ function Node({ id, health, size, compact }: { id: NodeId; health: Health; size:
         </motion.div>
       </div>
       <div className={`${compact ? "mt-3 text-base" : "mt-5 text-xl"} font-medium tracking-tight text-white/90`}>{NODE_LABEL[id]}</div>
-      <div className="mt-1 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-label" style={{ color }}>
+      <div className="mt-1 flex items-center gap-1.5 font-mono text-[11px]" style={{ color }}>
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
         {HEALTH_LABEL[health]}
       </div>
@@ -145,7 +145,7 @@ function Link({
             />
           ))}
         {isFailing && (
-          <span className="alarm absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-lg font-semibold text-bad">
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-lg font-semibold text-bad">
             ✕
           </span>
         )}

@@ -39,7 +39,7 @@ export function CallPanel({ call, provider, now }: { call: CallState; provider: 
       <header className="relative flex items-start justify-between gap-4 border-b border-white/[0.06] p-7">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${live ? "alarm bg-bad" : pending ? "alarm bg-accent" : call.status === "failed" ? "bg-warn" : "bg-ok"}`} />
+            <span className={`h-2 w-2 rounded-full ${live ? "bg-bad" : pending ? "bg-accent" : call.status === "failed" ? "bg-warn" : "bg-ok"}`} />
             <span className="label !text-white/55">
               {stateLabel}
             </span>
@@ -89,7 +89,7 @@ export function CallPanel({ call, provider, now }: { call: CallState; provider: 
                   className={`flex flex-col ${agent ? "items-end" : "items-start"}`}
                   data-speaker={line.speaker}
                 >
-                  <span className="mb-1 px-1 font-mono text-[10px] uppercase tracking-label text-white/35">
+                  <span className="mb-1 px-1 font-mono text-[10px] text-white/35">
                     {agent ? "Uplink" : "Support rep"}
                   </span>
                   <div

@@ -81,7 +81,7 @@ export function DiagnosisCard({ diagnosis }: { diagnosis?: Diagnosis }) {
       <div className="flex items-center justify-between">
         <div className="label">Diagnosis</div>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-[11px] uppercase tracking-label text-white/40">Confidence</span>
+          <span className="font-mono text-[11px] text-white/40">Confidence</span>
           <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
             <motion.div className="h-full rounded-full bg-accent" initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.9 }} />
           </div>
@@ -102,7 +102,7 @@ export function DiagnosisCard({ diagnosis }: { diagnosis?: Diagnosis }) {
             </div>
           )}
           <div className="mt-4 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-accent">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 font-mono text-[11px] text-accent">
               <ShieldCheck className="h-3.5 w-3.5" />
               Explained on-device · no cloud
             </span>
