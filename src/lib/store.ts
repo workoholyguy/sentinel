@@ -1,5 +1,5 @@
 // In-memory state for the single Uplink process (one laptop, one network).
-import type { Incident, LocalModelState, Snapshot, TerminalLine } from "./types";
+import type { Incident, LocalModelState, Snapshot, TerminalLine, WatchdogState } from "./types";
 import { healthySnapshot } from "./mock";
 
 export type DemoMode = "none" | "isp-outage" | "ipv6-blackhole";
@@ -15,6 +15,7 @@ export interface SentinelState {
   devinAsked: Record<string, number>; // fault → when Devin was last asked to write a repair for it
   llm: LocalModelState;
   terminal: TerminalLine[];
+  watchdog?: WatchdogState;
   providerCalledAt?: number; // last time Uplink phoned the provider (one call per outage)
   lastTicket?: string;
 }

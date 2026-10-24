@@ -168,6 +168,16 @@ export interface StatusResponse {
   llm?: LocalModelState;
   terminal?: TerminalLine[];
   outage?: boolean; // the demo's real outage switch is on
+  watchdog?: WatchdogState;
+}
+
+/** The cloud watchdog: places the provider call if the house goes completely dark. */
+export interface WatchdogState {
+  enabled: boolean;
+  quietSeconds: number;
+  lastOk?: number; // last check-in the cloud acknowledged
+  called?: { id: string; at: number; ok: boolean; error?: string } | null; // a call the cloud placed while we were offline
+  acked?: string;
 }
 
 /** The on-device model only runs during an incident: asleep → waking → troubleshooting → done → asleep. */

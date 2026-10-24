@@ -21,6 +21,7 @@ export async function GET() {
     llm: s.llm,
     terminal: (s.terminal ?? []).slice(-120),
     outage: outageActive(),
+    watchdog: s.watchdog,
   };
   return NextResponse.json(body);
 }

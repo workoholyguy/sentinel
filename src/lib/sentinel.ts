@@ -4,6 +4,7 @@ import type { Incident, Snapshot } from "./types";
 import { state, now, log, term } from "./store";
 import { demoProfile } from "./profile";
 import { callDelaySeconds, confirmFault } from "./escalation";
+import { adoptCloudCall, heartbeat } from "./watchdog";
 import { explainLocally, loadModel, localModelName, unloadModel } from "./llm";
 import { ispOutageSnapshot } from "./mock";
 import { askDevinForFix, startCustomerUpdate, diagnoseSnapshot as diagnoseReal, execContext, hasFixFor, pollDevinFix, pollProviderCall, runFixesFor, sampleNetwork, startProviderCall } from "./adapters";
@@ -61,6 +62,7 @@ function wakeModel(reason: string): Promise<boolean> {
 }
 
 const CALL_COOLDOWN_MS = 15 * 60 * 1000;
+
 
 /** The provider is to blame: start the countdown to the call, from now. */
 function escalate(inc: Incident) {
@@ -132,6 +134,7 @@ function newIncident(simulated: boolean): Incident {
 async function tick() {
   const s = state();
   s.snapshot = await sample();
+  void heartbeat();
   let inc = s.incident;
 
   // 0. A different, confirmed fault replaces what's on screen: a finished incident, or one that's
@@ -321,6 +324,7 @@ async function tick() {
         }
         return;
       }
+      if (await adoptCloudCall(inc)) return; // the cloud watchdog already called while we were dark
       if (s.providerCalledAt && Date.now() - s.providerCalledAt < CALL_COOLDOWN_MS) {
         inc.status = "ticketed";
         log(inc, "call", `Already reported to ${demoProfile.providerName}${s.lastTicket ? ` (ticket ${s.lastTicket})` : ""} — not calling again`);
