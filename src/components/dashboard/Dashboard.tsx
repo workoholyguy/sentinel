@@ -131,10 +131,10 @@ function Overview({ data, poll, now }: { data: StatusResponse; poll: Poll; now: 
       )}
 
       {call ? (
-        <div className="h-[460px]">
+        <div className={call.outcome ? "h-[820px]" : "h-[480px]"}>
           <CallPanel call={call} provider={provider} now={now} />
         </div>
-      ) : incident?.status === "escalating" ? (
+      ) : incident?.status === "escalating" && incident.callAt ? (
         <section className="panel p-6">
           <div className="label">Call to {provider}</div>
           <CallCountdown incident={incident} provider={provider} now={now} />

@@ -44,6 +44,10 @@ export async function startDebrief(incident: Incident, profile: ProviderProfile,
 export async function getCall(id: string, env: Env = process.env): Promise<CallState> {
   const mock = mockCalls.get(id);
   if (mock) return mock.state();
+  // A scripted call lost on a server reload can't be asked about anywhere: treat it as over.
+  if (id.startsWith("mock_call_")) {
+    return { id, status: "failed", to: "", startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), transcript: [] };
+  }
   const cfg = vapiConfig(env);
   if (!cfg) throw new Error(`Unknown call ${id}`);
   return getCallState(id, { apiKey: cfg.apiKey });

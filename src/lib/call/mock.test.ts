@@ -64,3 +64,10 @@ describe("customer update setup", () => {
     expect(await startDebrief(callingIncident, demoProfile, { VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", SENTINEL_SUPPORT_NUMBER: "+14045550123" })).toBeNull();
   });
 });
+
+describe("scripted calls lost on reload", () => {
+  it("reports an unknown scripted call as over instead of asking Vapi", async () => {
+    const c = await getCall("mock_call_0_lost", { VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", SENTINEL_SUPPORT_NUMBER: "+14045550123" });
+    expect(c.status).toBe("failed");
+  });
+});

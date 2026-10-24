@@ -109,7 +109,7 @@ export const STEP_LABEL: Record<IncidentStatus, string> = {
 export type StepState = "done" | "current" | "todo";
 
 export function isEscalated(incident: Pick<Incident, "status" | "call" | "diagnosis">): boolean {
-  return Boolean(incident.call) || ESCALATE_PATH.slice(3).includes(incident.status);
+  return Boolean(incident.call) || incident.diagnosis?.blame === "isp" || ESCALATE_PATH.slice(3).includes(incident.status);
 }
 
 /** The steps to render for a status, plus the state of each one. */

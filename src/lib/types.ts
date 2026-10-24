@@ -141,6 +141,7 @@ export interface Incident {
   call?: CallState;
   debrief?: CallState; // the follow-up call that tells the customer what the provider said
   callAt?: string; // when Uplink will phone the provider if the outage hasn't cleared
+  clearedAt?: string; // a finished incident whose network has since been healthy
   repair?: RepairState; // set when Uplink asked Devin to write a new fix
   timeline: TimelineEvent[];
 }

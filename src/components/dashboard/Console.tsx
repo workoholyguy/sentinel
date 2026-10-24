@@ -34,12 +34,13 @@ const TONE: Record<TerminalLine["kind"], string> = {
 
 /** What the agent actually runs, and what came back. */
 export function Terminal({ lines, className = "" }: { lines: TerminalLine[]; className?: string }) {
-  const end = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const last = lines.at(-1)?.at;
   useEffect(() => {
-    end.current?.scrollIntoView({ block: "end" });
-  }, [lines.length]);
+    if (box.current) box.current.scrollTop = box.current.scrollHeight; // its own box only, never the page
+  }, [last]);
   return (
-    <div className={`scroll-thin min-h-0 overflow-y-auto rounded-xl bg-black/50 p-4 font-mono text-[12px] leading-relaxed ${className}`} data-testid="terminal">
+    <div ref={box} className={`scroll-thin min-h-0 overflow-y-auto rounded-xl bg-black/50 p-4 font-mono text-[12px] leading-relaxed ${className}`} data-testid="terminal">
       {lines.length === 0 && <div className="text-white/35">Watching… the local model is asleep until something breaks.</div>}
       {lines.map((l, i) => (
         <div key={i} className="flex gap-3">
@@ -47,7 +48,6 @@ export function Terminal({ lines, className = "" }: { lines: TerminalLine[]; cla
           <span className={`min-w-0 break-words ${TONE[l.kind]}`}>{l.text}</span>
         </div>
       ))}
-      <div ref={end} />
     </div>
   );
 }

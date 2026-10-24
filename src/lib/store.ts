@@ -15,6 +15,8 @@ export interface SentinelState {
   devinAsked: Record<string, number>; // fault → when Devin was last asked to write a repair for it
   llm: LocalModelState;
   terminal: TerminalLine[];
+  providerCalledAt?: number; // last time Uplink phoned the provider (one call per outage)
+  lastTicket?: string;
 }
 
 const g = globalThis as unknown as { __sentinel?: SentinelState };

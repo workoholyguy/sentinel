@@ -47,11 +47,27 @@ function wakeModel(reason: string): Promise<boolean> {
   term("model", `$ ollama run ${localModelName}   # ${reason}`);
   const t0 = Date.now();
   loading = loadModel().then((ok) => {
+    if (state().llm.phase === "asleep") {
+      // the blip cleared while it loaded: put it straight back to sleep
+      void unloadModel();
+      loading = null;
+      return ok;
+    }
     term(ok ? "out" : "err", ok ? `model loaded in ${((Date.now() - t0) / 1000).toFixed(1)} s` : "couldn't load the local model (is Ollama running?)");
     loading = null;
     return ok;
   });
   return loading;
+}
+
+const CALL_COOLDOWN_MS = 15 * 60 * 1000;
+
+/** The provider is to blame: start the countdown to the call, from now. */
+function escalate(inc: Incident) {
+  inc.status = "escalating";
+  inc.callAt = new Date(Date.now() + callDelaySeconds(inc.simulated) * 1000).toISOString();
+  log(inc, "info", `It's ${demoProfile.providerName}'s fault — calling them`);
+  term("info", `calling ${demoProfile.providerName} at ${new Date(inc.callAt).toLocaleTimeString("en-US", { hour12: false })} unless it clears first`);
 }
 
 function sleepModel() {
@@ -124,7 +140,15 @@ async function tick() {
   const parked = inc && inc.diagnosis && (DONE.includes(inc.status) || (inc.status === "fixing" && inc.repair && inc.repair.status !== "queued"));
   if (inc && parked) {
     const d = diagnoseSnapshot(s.snapshot);
-    if (d && d.fault !== inc.diagnosis!.fault) {
+    const was = inc.diagnosis!;
+    const sameOutage = Boolean(d) && (d!.fault === was.fault || (d!.blame === "isp" && was.blame === "isp"));
+    const cleared = DONE.includes(inc.status) && Boolean(inc.clearedAt);
+    if (!d) {
+      s.suspect = undefined;
+      if (!DONE.includes(inc.status)) sleepModel(); // only waiting on Devin; nothing local to think about
+    } else if (sameOutage && !cleared) {
+      s.suspect = undefined; // still the same outage: keep it on screen
+    } else {
       const firstSighting = !s.suspect || s.suspect.fault !== d.fault;
       const check = confirmFault(s.suspect, d.fault, Date.now(), s.demo !== "none");
       s.suspect = check.suspect;
@@ -150,6 +174,7 @@ async function tick() {
     const d = diagnoseSnapshot(s.snapshot);
     if (!d) {
       s.suspect = undefined;
+      if (inc && DONE.includes(inc.status) && !inc.clearedAt) inc.clearedAt = now();
       if (!inc || DONE.includes(inc.status)) sleepModel();
       // Healthy again: archive a finished incident after it has been on screen for a while.
       if (inc && Date.now() - Date.parse(inc.timeline.at(-1)?.at ?? inc.startedAt) > 20000) {
@@ -201,8 +226,7 @@ async function tick() {
     // 2. Diagnosed, but nothing in the playbook handles it.
     if (inc.status === "diagnosing" && inc.diagnosis && !(await hasFixFor(inc.diagnosis.fault))) {
       if (inc.diagnosis.blame === "isp") {
-        inc.status = "escalating";
-        log(inc, "info", `It's ${demoProfile.providerName}'s fault — calling them`);
+        escalate(inc);
         return;
       }
       // Only spend a Devin session on a fault that is still there.
@@ -263,8 +287,7 @@ async function tick() {
         inc.status = "resolved";
         log(inc, "info", "Network healthy again — no human needed");
       } else if (inc.diagnosis.blame === "isp") {
-        inc.status = "escalating";
-        log(inc, "info", `It's ${demoProfile.providerName}'s fault — calling them`);
+        escalate(inc);
       } else if (DRY_RUN && !inc.simulated) {
         // Dry-run fixes were only rehearsed, so "they failed" isn't true — don't send Devin after them.
         inc.status = "needs_human";
@@ -280,18 +303,15 @@ async function tick() {
     // 3. Provider's fault: place the call — once the outage has outlasted a blip.
     if (inc.status === "escalating") {
       const wait = callDelaySeconds(inc.simulated);
-      const lasted = (Date.now() - Date.parse(inc.startedAt)) / 1000;
-      if (!inc.callAt) {
-        inc.callAt = new Date(Date.parse(inc.startedAt) + wait * 1000).toISOString();
-        term("info", `calling ${demoProfile.providerName} at ${new Date(inc.callAt).toLocaleTimeString("en-US", { hour12: false })} unless it clears first`);
-      }
+      inc.callAt ??= now();
+      const waiting = Date.now() < Date.parse(inc.callAt);
       const lastShown = Date.parse(inc.timeline.findLast?.((e) => e.kind === "probe")?.at ?? inc.startedAt);
-      if (lasted < wait && Date.now() - Math.max(lastShown, probeShownAt.get(inc.id) ?? 0) > PROBE_LOG_MS) {
+      if (waiting && Date.now() - Math.max(lastShown, probeShownAt.get(inc.id) ?? 0) > PROBE_LOG_MS) {
         probeShownAt.set(inc.id, Date.now());
         term("info", "still down? re-checking…");
         probeLines(s.snapshot);
       }
-      if (lasted < wait) {
+      if (waiting) {
         if (!diagnoseSnapshot(s.snapshot)) {
           inc.status = "resolved";
           log(inc, "info", `Cleared on its own — no need to call ${demoProfile.providerName}`);
@@ -301,8 +321,14 @@ async function tick() {
         }
         return;
       }
+      if (s.providerCalledAt && Date.now() - s.providerCalledAt < CALL_COOLDOWN_MS) {
+        inc.status = "ticketed";
+        log(inc, "call", `Already reported to ${demoProfile.providerName}${s.lastTicket ? ` (ticket ${s.lastTicket})` : ""} — not calling again`);
+        return;
+      }
       try {
         inc.call = await startProviderCall(inc, demoProfile);
+        s.providerCalledAt = Date.now();
       } catch (e) {
         // No way out yet (the ISP is down): keep retrying every tick; it goes out the moment there's a path.
         if (!inc.timeline.some((ev) => ev.text.startsWith("No way out"))) {
@@ -324,6 +350,7 @@ async function tick() {
         const o = inc.call.outcome;
         log(inc, "call", o?.ticketNumber ? `Ticket ${o.ticketNumber}${o.creditUsd ? ` · $${o.creditUsd.toFixed(2)} credit` : ""}${o.technicianWindow ? ` · tech ${o.technicianWindow}` : ""}` : "Call ended");
         if (o?.cause) log(inc, "info", `Cause per ${demoProfile.providerName}: ${o.cause}`);
+        if (o?.ticketNumber) s.lastTicket = o.ticketNumber;
         const debrief = inc.call.status === "ended" && o?.summary ? await startCustomerUpdate(inc, demoProfile).catch((e) => {
           console.error("[sentinel] customer update call failed", e);
           return null;
@@ -410,8 +437,18 @@ export function ensureRunning() {
 export function setDemo(mode: "none" | "isp-outage" | "ipv6-blackhole") {
   const s = state();
   s.demo = mode;
-  if (mode === "none" && s.incident) {
-    s.history.unshift(s.incident);
+  const inc = s.incident;
+  if (mode === "none") {
+    s.providerCalledAt = undefined; // a fresh demo run may call again
+    s.lastTicket = undefined;
+    s.suspect = undefined;
+  }
+  if (!inc) return;
+  // Don't drop a live call — but a call stuck for 10+ minutes isn't live.
+  const callStarted = Date.parse((inc.status === "informing" ? inc.debrief : inc.call)?.startedAt ?? "") || 0;
+  const onThePhone = (inc.status === "calling" || inc.status === "informing") && Date.now() - callStarted < 10 * 60 * 1000;
+  if ((mode === "none" && !onThePhone) || (mode !== "none" && DONE.includes(inc.status))) {
+    s.history.unshift(inc);
     s.incident = null;
   }
 }
