@@ -42,7 +42,7 @@ next-env.d.ts
 .env*.local
 
 # local app launcher
-.sentinel.log
+.uplink.log
 
 # Mac app build output
 mac/build/

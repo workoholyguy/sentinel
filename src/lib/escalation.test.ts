@@ -3,17 +3,17 @@ import { callDelaySeconds, confirmFault, CONFIRM_MS, DEFAULT_CALL_AFTER_SECONDS 
 
 describe("callDelaySeconds", () => {
   it("gives a simulated (demo) outage a short countdown of its own", () => {
-    expect(callDelaySeconds(true, { SENTINEL_CALL_AFTER_SECONDS: "600" })).toBe(10);
-    expect(callDelaySeconds(true, { SENTINEL_DEMO_CALL_AFTER_SECONDS: "0" })).toBe(0);
+    expect(callDelaySeconds(true, { UPLINK_CALL_AFTER_SECONDS: "600" })).toBe(10);
+    expect(callDelaySeconds(true, { UPLINK_DEMO_CALL_AFTER_SECONDS: "0" })).toBe(0);
   });
   it("waits 3 minutes for a real outage by default", () => {
     expect(callDelaySeconds(false, {})).toBe(DEFAULT_CALL_AFTER_SECONDS);
     expect(DEFAULT_CALL_AFTER_SECONDS).toBe(180);
   });
-  it("honours SENTINEL_CALL_AFTER_SECONDS and ignores junk", () => {
-    expect(callDelaySeconds(false, { SENTINEL_CALL_AFTER_SECONDS: "60" })).toBe(60);
-    expect(callDelaySeconds(false, { SENTINEL_CALL_AFTER_SECONDS: "0" })).toBe(0);
-    expect(callDelaySeconds(false, { SENTINEL_CALL_AFTER_SECONDS: "soon" })).toBe(180);
+  it("honours UPLINK_CALL_AFTER_SECONDS and ignores junk", () => {
+    expect(callDelaySeconds(false, { UPLINK_CALL_AFTER_SECONDS: "60" })).toBe(60);
+    expect(callDelaySeconds(false, { UPLINK_CALL_AFTER_SECONDS: "0" })).toBe(0);
+    expect(callDelaySeconds(false, { UPLINK_CALL_AFTER_SECONDS: "soon" })).toBe(180);
   });
 });
 

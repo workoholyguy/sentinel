@@ -68,7 +68,7 @@ describe("runFixes", () => {
 
 describe("loadExtraPlugins", () => {
   it("imports valid *.plugin.ts|js files and skips invalid ones with a warning", async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), "sentinel-plugins-"));
+    const dir = await mkdtemp(path.join(tmpdir(), "uplink-plugins-"));
     await writeFile(
       path.join(dir, "arp-flush.plugin.ts"),
       `export default { id: "arp-flush", title: "x", handles: ["GATEWAY_UNREACHABLE"], platforms: ["darwin"],
@@ -93,6 +93,6 @@ describe("loadExtraPlugins", () => {
   });
 
   it("returns [] for a missing directory", async () => {
-    expect(await loadExtraPlugins("/nonexistent/sentinel/plugins")).toEqual([]);
+    expect(await loadExtraPlugins("/nonexistent/uplink/plugins")).toEqual([]);
   });
 });

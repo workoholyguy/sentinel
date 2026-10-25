@@ -43,8 +43,8 @@ describe("facade", () => {
     expect(isLiveCalling({})).toBe(false);
     expect(isLiveCalling({ VAPI_API_KEY: "k" })).toBe(false);
     expect(isLiveCalling({ VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p" })).toBe(false); // nobody to ring yet
-    expect(isLiveCalling({ VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", SENTINEL_SUPPORT_NUMBER: "" })).toBe(false);
-    expect(isLiveCalling({ VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", SENTINEL_SUPPORT_NUMBER: "+14045550123" })).toBe(true);
+    expect(isLiveCalling({ VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", UPLINK_SUPPORT_NUMBER: "" })).toBe(false);
+    expect(isLiveCalling({ VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", UPLINK_SUPPORT_NUMBER: "+14045550123" })).toBe(true);
     const started = await startCall(callingIncident, demoProfile, {});
     expect(started.id).toMatch(/^mock_call_/);
     expect(started.status).toBe("ringing");
@@ -58,16 +58,16 @@ describe("facade", () => {
 
 describe("customer update setup", () => {
   it("only calls the customer with live calling and a real number", async () => {
-    expect(customerNumber({ SENTINEL_CUSTOMER_NUMBER: "+18455550123" })).toBe("+18455550123");
-    expect(customerNumber({ SENTINEL_CUSTOMER_NUMBER: "845 555 0123" })).toBeNull();
+    expect(customerNumber({ UPLINK_CUSTOMER_NUMBER: "+18455550123" })).toBe("+18455550123");
+    expect(customerNumber({ UPLINK_CUSTOMER_NUMBER: "845 555 0123" })).toBeNull();
     expect(await startDebrief(callingIncident, demoProfile, {})).toBeNull();
-    expect(await startDebrief(callingIncident, demoProfile, { VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", SENTINEL_SUPPORT_NUMBER: "+14045550123" })).toBeNull();
+    expect(await startDebrief(callingIncident, demoProfile, { VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", UPLINK_SUPPORT_NUMBER: "+14045550123" })).toBeNull();
   });
 });
 
 describe("scripted calls lost on reload", () => {
   it("reports an unknown scripted call as over instead of asking Vapi", async () => {
-    const c = await getCall("mock_call_0_lost", { VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", SENTINEL_SUPPORT_NUMBER: "+14045550123" });
+    const c = await getCall("mock_call_0_lost", { VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", UPLINK_SUPPORT_NUMBER: "+14045550123" });
     expect(c.status).toBe("failed");
   });
 });

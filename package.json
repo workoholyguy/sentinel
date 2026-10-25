@@ -4,12 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "uplink": "bash scripts/sentinel-app.sh",
+    "uplink": "bash scripts/uplink-app.sh",
     "app": "bash mac/build.sh",
     "outage:on": "bash scripts/outage.sh on",
     "outage:off": "bash scripts/outage.sh off",
     "watchdog:off": "bash scripts/watchdog.sh",
-    "sentinel": "bash scripts/sentinel-app.sh",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",

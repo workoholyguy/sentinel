@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ensureRunning, setDemo } from "@/lib/sentinel";
+import { ensureRunning, setDemo } from "@/lib/uplink";
 
 // Simulates a fault Uplink has no repair plugin for (an IPv6 blackhole), so it asks Devin to write one.
 export async function POST() {

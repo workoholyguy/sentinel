@@ -12,7 +12,7 @@ const mockCalls = new Map<string, MockCall>();
 function vapiConfig(env: Env) {
   const apiKey = env.VAPI_API_KEY?.trim();
   const phoneNumberId = env.VAPI_PHONE_NUMBER_ID?.trim();
-  const target = env.SENTINEL_SUPPORT_NUMBER?.trim() ?? "";
+  const target = env.UPLINK_SUPPORT_NUMBER?.trim() ?? "";
   return apiKey && phoneNumberId && /^\+\d{8,15}$/.test(target) ? { apiKey, phoneNumberId } : null;
 }
 
@@ -33,7 +33,7 @@ export async function startCall(incident: Incident, profile: ProviderProfile, en
 
 /** The customer's phone for the follow-up call, when one is set (E.164). */
 export function customerNumber(env: Env = process.env): string | null {
-  const n = env.SENTINEL_CUSTOMER_NUMBER?.trim() ?? "";
+  const n = env.UPLINK_CUSTOMER_NUMBER?.trim() ?? "";
   return /^\+\d{8,15}$/.test(n) ? n : null;
 }
 

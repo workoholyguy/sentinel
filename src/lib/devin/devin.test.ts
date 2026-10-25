@@ -22,7 +22,7 @@ const diagnosis: Diagnosis = {
   explanation: "The router's DNS proxy is wedged.",
 };
 
-const input = { fault: "dns_resolver_stuck", diagnosis, snapshot, platform: "linux" as const, repo: "workoholyguy/sentinel" };
+const input = { fault: "dns_resolver_stuck", diagnosis, snapshot, platform: "linux" as const, repo: "workoholyguy/uplink" };
 
 interface Call { url: string; init?: RequestInit }
 
@@ -61,7 +61,7 @@ describe("buildRepairBrief", () => {
     expect(brief).toContain("src/lib/fixes/extra/fix-dns-resolver-stuck.plugin.ts");
     expect(brief).toContain("ctx.exec");
     expect(brief).toContain('"repair: ');
-    expect(brief).toContain("workoholyguy/sentinel");
+    expect(brief).toContain("workoholyguy/uplink");
     expect(brief).toContain("linux");
     expect(brief).toContain("dns: down");
     expect(brief).toContain("latency 3 ms");
@@ -80,7 +80,7 @@ describe("createRepairSession", () => {
   it("POSTs to v3 with bearer auth, prompt and structured output schema", async () => {
     const { fetchImpl, calls } = fakeFetch([{ body: v3Session() }]);
     const brief = buildRepairBrief(input);
-    const s = await createRepairSession(brief, { apiKey: "cog_test", orgId: "org-1", fetchImpl, title: "T", tags: ["sentinel"] });
+    const s = await createRepairSession(brief, { apiKey: "cog_test", orgId: "org-1", fetchImpl, title: "T", tags: ["uplink"] });
 
     expect(calls[0].url).toBe("https://api.devin.ai/v3/organizations/org-1/sessions");
     expect(calls[0].init?.method).toBe("POST");
@@ -92,7 +92,7 @@ describe("createRepairSession", () => {
     expect(body.prompt).toContain("dig @1.1.1.1 example.com -> NOERROR");
     expect(body.structured_output_schema.properties.pr_url).toBeDefined();
     expect(body.title).toBe("T");
-    expect(body.tags).toEqual(["sentinel"]);
+    expect(body.tags).toEqual(["uplink"]);
     expect(s).toEqual({
       id: "devin-abc123",
       url: "https://app.devin.ai/sessions/abc123",
@@ -195,7 +195,7 @@ describe("requestRepair", () => {
     expect(calls[0].url).toBe("https://api.example.test/v3/organizations/org-9/sessions");
     expect((calls[0].init?.headers as Record<string, string>).Authorization).toBe("Bearer cog_x");
     const body = JSON.parse(String(calls[0].init?.body));
-    expect(body.tags).toEqual(["sentinel", "repair", "dns_resolver_stuck"]);
+    expect(body.tags).toEqual(["uplink", "repair", "dns_resolver_stuck"]);
     expect(s?.status).toBe("starting");
   });
 

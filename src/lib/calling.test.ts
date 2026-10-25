@@ -7,7 +7,7 @@ import { isLiveCalling, startDebrief } from "./call";
 import type { Incident } from "./types";
 import { demoProfile } from "./profile";
 
-const live = { VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", SENTINEL_SUPPORT_NUMBER: "+14045550100", SENTINEL_CUSTOMER_NUMBER: "+18455550394" };
+const live = { VAPI_API_KEY: "k", VAPI_PHONE_NUMBER_ID: "p", UPLINK_SUPPORT_NUMBER: "+14045550100", UPLINK_CUSTOMER_NUMBER: "+18455550394" };
 const before = process.env.UPLINK_CALLING_FILE;
 afterEach(() => {
   process.env.UPLINK_CALLING_FILE = before;

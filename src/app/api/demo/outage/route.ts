@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ensureRunning } from "@/lib/sentinel";
+import { ensureRunning } from "@/lib/uplink";
 import { state } from "@/lib/store";
 import { endOutage, outageActive, SETUP_COMMAND, startOutage } from "@/lib/outage";
 

@@ -10,7 +10,7 @@ Vitest. pnpm only.
 ## Contracts — do not change
 - `src/lib/types.ts` — all shared types. Do not edit. Need a change? Say so in your PR description.
 - `src/lib/mock.ts`, `src/lib/profile.ts` — fixtures; read, don't edit.
-- `src/app/api/**` and `src/lib/sentinel.ts`, `src/lib/store.ts` — integrator-owned.
+- `src/app/api/**` and `src/lib/uplink.ts`, `src/lib/store.ts` — integrator-owned.
 
 ## Slice ownership (only touch your own folder + its tests)
 | Slice | Owns |

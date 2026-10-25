@@ -83,7 +83,7 @@ function sleepModel() {
 // The evidence each Devin request was made with, so a queued one goes out with the fault, not today's healthy network.
 const evidence = new Map<string, Snapshot>();
 const probeShownAt = new Map<string, number>();
-const DRY_RUN = process.env.SENTINEL_DRY_RUN !== "0"; // real system changes only when explicitly enabled
+const DRY_RUN = process.env.UPLINK_DRY_RUN !== "0"; // real system changes only when explicitly enabled
 
 function injected(): Snapshot | null {
   const s = state();
@@ -297,7 +297,7 @@ async function tick() {
       } else if (DRY_RUN && !inc.simulated) {
         // Dry-run fixes were only rehearsed, so "they failed" isn't true — don't send Devin after them.
         inc.status = "needs_human";
-        log(inc, "info", "Dry run: the playbook was rehearsed, not applied — needs a human (SENTINEL_DRY_RUN=0 lets Uplink act)");
+        log(inc, "info", "Dry run: the playbook was rehearsed, not applied — needs a human (UPLINK_DRY_RUN=0 lets Uplink act)");
       } else {
         // The playbook really ran and didn't fix a fault that's ours: Devin writes a better repair.
         log(inc, "fix", "The playbook didn't fix it — asking Devin to write a better repair");
@@ -341,7 +341,7 @@ async function tick() {
         if (!inc.timeline.some((ev) => ev.text.startsWith("No way out"))) {
           log(inc, "info", `No way out to call ${demoProfile.providerName} yet — calling the moment there's a connection (e.g. your phone's hotspot)`);
         }
-        console.warn("[sentinel] provider call not placed yet:", e instanceof Error ? e.message : e);
+        console.warn("[uplink] provider call not placed yet:", e instanceof Error ? e.message : e);
         return;
       }
       inc.status = "calling";
@@ -366,7 +366,7 @@ async function tick() {
         // even if the call was cut off after the rep gave it.
         const news = hasNews(o);
         const debrief = cloud ?? (news ? await startCustomerUpdate(inc, demoProfile).catch((e) => {
-          console.error("[sentinel] customer update call failed", e);
+          console.error("[uplink] customer update call failed", e);
           return null;
         }) : null);
         if (debrief) {
@@ -425,13 +425,13 @@ async function handOffToDevin(inc: Incident, snapshot: Snapshot) {
 
 // The loop lives on globalThis so one process runs one loop. Keyed by this module's `tick`, so a
 // hot reload swaps in the new code instead of leaving the old loop running stale code.
-const loop = globalThis as unknown as { __sentinelTick?: unknown; __sentinelTimer?: ReturnType<typeof setInterval> };
+const loop = globalThis as unknown as { __uplinkTick?: unknown; __uplinkTimer?: ReturnType<typeof setInterval> };
 
 export function ensureRunning() {
-  if (loop.__sentinelTick === tick) return;
-  if (loop.__sentinelTimer) clearInterval(loop.__sentinelTimer);
-  const firstStart = !loop.__sentinelTick;
-  loop.__sentinelTick = tick;
+  if (loop.__uplinkTick === tick) return;
+  if (loop.__uplinkTimer) clearInterval(loop.__uplinkTimer);
+  const firstStart = !loop.__uplinkTick;
+  loop.__uplinkTick = tick;
   state().started = true;
   if (firstStart) {
     term("info", "Uplink is watching your network · local model asleep until something breaks");
@@ -440,11 +440,11 @@ export function ensureRunning() {
   // A slow sample (traceroute can take ~4 s) must not overlap the next one,
   // but a tick stuck for 15 s+ must not stop monitoring either.
   let tickStarted = 0;
-  loop.__sentinelTimer = setInterval(() => {
+  loop.__uplinkTimer = setInterval(() => {
     if (tickStarted && Date.now() - tickStarted < 15_000) return;
     const started = (tickStarted = Date.now());
     tick()
-      .catch((e) => console.error("[sentinel] tick failed", e))
+      .catch((e) => console.error("[uplink] tick failed", e))
       .finally(() => {
         if (tickStarted === started) tickStarted = 0;
       });

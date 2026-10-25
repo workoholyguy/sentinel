@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ensureRunning } from "@/lib/sentinel";
+import { ensureRunning } from "@/lib/uplink";
 import { callingEnabled, setCalling } from "@/lib/calling";
 import { disarm, heartbeat } from "@/lib/watchdog";
 

@@ -76,7 +76,7 @@ export async function sendBeat(payload: BeatPayload, env: Env = process.env): Pr
   }
 }
 
-// ---- wired into the Uplink loop (src/lib/sentinel.ts) ----------------------------------------
+// ---- wired into the Uplink loop (src/lib/uplink.ts) ----------------------------------------
 const BEAT_MS = 5000;
 const CLOUD_CALL_FRESH_MS = 10 * 60 * 1000; // an older cloud call is history, not something to follow now
 const DONE: Incident["status"][] = ["resolved", "ticketed", "needs_human"];

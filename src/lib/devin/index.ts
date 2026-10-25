@@ -81,7 +81,7 @@ function mockStatus(entry: MockEntry, now: number): RepairSession {
     url: `https://app.devin.ai/sessions/${entry.id.replace(/^devin-/, "")}`,
     status,
     title: entry.title,
-    ...(status === "finished" ? { prUrl: `https://github.com/mock/sentinel/pull/${1000 + Number(entry.id.split("-").pop())}` } : {}),
+    ...(status === "finished" ? { prUrl: `https://github.com/mock/uplink/pull/${1000 + Number(entry.id.split("-").pop())}` } : {}),
     updatedAt: new Date(now).toISOString(),
   };
 }
@@ -112,7 +112,7 @@ export async function requestRepair(input: RepairBriefInput, deps: RequestRepair
   try {
     const brief = buildRepairBrief(input);
     const maxAcu = Number(env.DEVIN_MAX_ACU ?? 8) || undefined;
-    return await createRepairSession(brief, { ...opts, title, maxAcu, tags: ["sentinel", "repair", String(input.fault)] });
+    return await createRepairSession(brief, { ...opts, title, maxAcu, tags: ["uplink", "repair", String(input.fault)] });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (deps.queueOffline && !(err instanceof DevinApiError)) throw new DevinUnreachableError(msg);

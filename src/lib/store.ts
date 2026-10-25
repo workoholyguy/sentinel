@@ -4,7 +4,7 @@ import { healthySnapshot } from "./mock";
 
 export type DemoMode = "none" | "isp-outage" | "ipv6-blackhole";
 
-export interface SentinelState {
+export interface UplinkState {
   snapshot: Snapshot;
   incident: Incident | null;
   history: Incident[];
@@ -20,11 +20,11 @@ export interface SentinelState {
   lastTicket?: string;
 }
 
-const g = globalThis as unknown as { __sentinel?: SentinelState };
+const g = globalThis as unknown as { __uplink?: UplinkState };
 
-export function state(): SentinelState {
-  if (!g.__sentinel) {
-    g.__sentinel = {
+export function state(): UplinkState {
+  if (!g.__uplink) {
+    g.__uplink = {
       snapshot: { ...healthySnapshot, at: new Date().toISOString() },
       incident: null,
       history: [],
@@ -37,10 +37,10 @@ export function state(): SentinelState {
     };
   }
   // State survives hot reloads; fields added later need a value.
-  g.__sentinel.devinAsked ??= {};
-  g.__sentinel.terminal ??= [];
-  g.__sentinel.llm ??= { phase: "asleep", model: process.env.LOCAL_LLM_MODEL ?? "llama3.2:3b", since: new Date().toISOString() };
-  return g.__sentinel;
+  g.__uplink.devinAsked ??= {};
+  g.__uplink.terminal ??= [];
+  g.__uplink.llm ??= { phase: "asleep", model: process.env.LOCAL_LLM_MODEL ?? "llama3.2:3b", since: new Date().toISOString() };
+  return g.__uplink;
 }
 
 export const now = () => new Date().toISOString();

@@ -107,11 +107,11 @@ describe("wifi-reconnect", () => {
 });
 
 describe("router-reboot", () => {
-  const prev = process.env.SENTINEL_DEMO;
+  const prev = process.env.UPLINK_DEMO;
   beforeEach(() => clearRecordedCommands());
   afterEach(() => {
-    if (prev === undefined) delete process.env.SENTINEL_DEMO;
-    else process.env.SENTINEL_DEMO = prev;
+    if (prev === undefined) delete process.env.UPLINK_DEMO;
+    else process.env.UPLINK_DEMO = prev;
   });
 
   it("dryRun: simulated reboot, ISP loss persists", async () => {
@@ -121,13 +121,13 @@ describe("router-reboot", () => {
     expect(getRecordedCommands()).toEqual(["Rebooted router (simulated)"]);
     expect((await routerReboot.run({ ...ctx, fault: "ISP_OUTAGE" } as FaultFixContext)).ok).toBe(false);
   });
-  it("SENTINEL_DEMO=1: gateway fault is simulated as fixed", async () => {
-    process.env.SENTINEL_DEMO = "1";
+  it("UPLINK_DEMO=1: gateway fault is simulated as fixed", async () => {
+    process.env.UPLINK_DEMO = "1";
     const { ctx } = fakeCtx("linux");
     expect(await routerReboot.run({ ...ctx, fault: "GATEWAY_UNREACHABLE" } as FaultFixContext)).toMatchObject({ ok: true, actions: ["Rebooted router (simulated)"] });
   });
   it("outside demo/dryRun it does nothing and fails", async () => {
-    delete process.env.SENTINEL_DEMO;
+    delete process.env.UPLINK_DEMO;
     const { ctx, calls } = fakeCtx("linux");
     expect((await routerReboot.run({ ...ctx, fault: "GATEWAY_UNREACHABLE" } as FaultFixContext)).ok).toBe(false);
     expect(calls).toEqual([]);

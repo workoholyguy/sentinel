@@ -27,7 +27,7 @@ export function diagnoseSnapshot(s: Snapshot): Diagnosis | null {
 
 // ---- Slice B: fixes ---------------------------------------------------------------------
 export function execContext(dryRun: boolean): FixContext {
-  return createExecContext({ platform, dryRun, sudo: process.env.SENTINEL_SUDO === "1" });
+  return createExecContext({ platform, dryRun, sudo: process.env.UPLINK_SUDO === "1" });
 }
 
 // Plugins Devin writes at runtime land in src/lib/fixes/extra and are picked up on the next fault.
@@ -61,7 +61,7 @@ export async function startCustomerUpdate(incident: Incident, profile: ProviderP
 }
 
 // ---- Slice E: Devin at runtime ----------------------------------------------------------
-const REPO = process.env.SENTINEL_REPO ?? "https://github.com/workoholyguy/sentinel";
+const REPO = process.env.UPLINK_REPO ?? "https://github.com/workoholyguy/uplink";
 
 /**
  * Asks Devin to write a repair. With no internet the request is queued (status "queued")

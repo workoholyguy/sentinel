@@ -2,11 +2,10 @@
 
 **When your internet dies, Uplink diagnoses it on-device, fixes what it can, and calls your provider for you.**
 
-[Live dashboard](https://sentinel-ten-eosin.vercel.app/) · [Hackathon project](https://www.gthackerhouse.com/events/devin-hackathon/projects/12161ff8-cc0d-4fb4-8901-a74731f61fe6) · [Devin PR #1](https://github.com/workoholyguy/sentinel/pull/1)
+[Live dashboard](https://sentinel-ten-eosin.vercel.app/) · [Hackathon project](https://www.gthackerhouse.com/events/devin-hackathon/projects/12161ff8-cc0d-4fb4-8901-a74731f61fe6) · [Devin PR #1](https://github.com/workoholyguy/uplink/pull/1)
 
 Built in one day at the Devin Hackathon, Hackerhouse @ GT (Georgia Tech, Atlanta), Saturday Oct 24, 2026, by
-Omar Madjitov. Hussain played the customer in the live demo and made the demo video. The project was renamed
-from "Sentinel", which is why the repo is `workoholyguy/sentinel`.
+Omar Madjitov. Hussain played the customer in the live demo and made the demo video.
 
 > The hosted link is the dashboard UI only. The real product runs on your laptop, because it has to probe
 > your own network.
@@ -64,9 +63,9 @@ submission (4,796 of 6,596 lines)**.
 **Devin runs inside it.** A fault the playbook can't handle goes to the Devin API (v3) with the evidence.
 Devin writes a new repair plugin with tests and opens a pull request.
 
-- [PR #1](https://github.com/workoholyguy/sentinel/pull/1): IPv6 black hole, 10 tests, opened about
+- [PR #1](https://github.com/workoholyguy/uplink/pull/1): IPv6 black hole, 10 tests, opened about
   2½ minutes after the fault. Merged.
-- [PR #2](https://github.com/workoholyguy/sentinel/pull/2): path-MTU black hole (slow HTTPS behind a
+- [PR #2](https://github.com/workoholyguy/uplink/pull/2): path-MTU black hole (slow HTTPS behind a
   healthy ping), from a real fault on the team's hotspot.
 
 With no internet, the request queues and goes out once a connection returns. A 6-hour guard stops repeat
@@ -103,7 +102,7 @@ flowchart LR
   devin -.->|"merged"| fix
 ```
 
-The orchestrator loop is [`src/lib/sentinel.ts`](src/lib/sentinel.ts); the dashboard reads its state from
+The orchestrator loop is [`src/lib/uplink.ts`](src/lib/uplink.ts); the dashboard reads its state from
 `GET /api/status`.
 
 ## Run it locally
@@ -139,12 +138,12 @@ the cloud watchdog stay off.
 |---|---|
 | `VAPI_API_KEY` | Vapi private key. With the next two, enables real phone calls |
 | `VAPI_PHONE_NUMBER_ID` | The Vapi (Twilio) number calls are placed from |
-| `SENTINEL_SUPPORT_NUMBER` | Number dialed as the provider's support line (E.164) |
-| `SENTINEL_CUSTOMER_NUMBER` | Customer's phone for the follow-up call (E.164); unset means no follow-up call |
-| `SENTINEL_CUSTOMER_NAME` | Customer name the agent uses |
-| `SENTINEL_CALLBACK_NUMBER` | Callback number the agent gives the provider |
-| `SENTINEL_CALL_AFTER_SECONDS` | How long a real provider outage lasts before the call (default 180; 8 on stage) |
-| `SENTINEL_DEMO_CALL_AFTER_SECONDS` | The same for simulated faults (default 10) |
+| `UPLINK_SUPPORT_NUMBER` | Number dialed as the provider's support line (E.164) |
+| `UPLINK_CUSTOMER_NUMBER` | Customer's phone for the follow-up call (E.164); unset means no follow-up call |
+| `UPLINK_CUSTOMER_NAME` | Customer name the agent uses |
+| `UPLINK_CALLBACK_NUMBER` | Callback number the agent gives the provider |
+| `UPLINK_CALL_AFTER_SECONDS` | How long a real provider outage lasts before the call (default 180; 8 on stage) |
+| `UPLINK_DEMO_CALL_AFTER_SECONDS` | The same for simulated faults (default 10) |
 | `WATCHDOG_URL`, `WATCHDOG_TOKEN` | Cloud watchdog address and shared bearer token; both set turns it on |
 | `WATCHDOG_QUIET_SECONDS` | Silence before the cloud calls (default 60, minimum 10) |
 | `DEVIN_API_KEY` | Devin API key; enables runtime repair sessions |
@@ -152,10 +151,10 @@ the cloud watchdog stay off.
 | `DEVIN_API_BASE` | Devin API base URL (default `https://api.devin.ai`) |
 | `DEVIN_MAX_ACU` | ACU cap per Devin session (default 8) |
 | `DEVIN_MOCK` | `1` simulates a Devin session without calling the API |
-| `SENTINEL_REPO` | Repo Devin opens pull requests on (default this one) |
-| `SENTINEL_DRY_RUN` | `0` lets repair plugins change the system (default: rehearse only) |
-| `SENTINEL_SUDO` | `1` runs repair commands through passwordless `sudo -n` (DNS flush and DHCP renew need root) |
-| `SENTINEL_DEMO` | `1` lets the router-reboot plugin simulate a reboot outside a dry run (there's no router API) |
+| `UPLINK_REPO` | Repo Devin opens pull requests on (default this one) |
+| `UPLINK_DRY_RUN` | `0` lets repair plugins change the system (default: rehearse only) |
+| `UPLINK_SUDO` | `1` runs repair commands through passwordless `sudo -n` (DNS flush and DHCP renew need root) |
+| `UPLINK_DEMO` | `1` lets the router-reboot plugin simulate a reboot outside a dry run (there's no router API) |
 | `LOCAL_LLM_URL` | OpenAI-compatible endpoint of the local model (default Ollama on `127.0.0.1:11434`) |
 | `LOCAL_LLM_MODEL` | Local model name (default `llama3.2:3b`) |
 | `UPLINK_CALLING_FILE` | Where the calling switch is saved (default `.uplink-calling` in the repo) |

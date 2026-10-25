@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { StatusResponse } from "@/lib/types";
 import { state } from "@/lib/store";
-import { ensureRunning } from "@/lib/sentinel";
+import { ensureRunning } from "@/lib/uplink";
 import { demoProfile } from "@/lib/profile";
 import { lastDevinRepair } from "@/lib/adapters";
 import { outageActive } from "@/lib/outage";
