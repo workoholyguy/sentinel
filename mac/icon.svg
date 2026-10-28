@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Uplink's app icon on Apple's grid: the website's mark on a dark tile with the standard margin. -->
+  <defs><linearGradient id="arrow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9a9a9a"/><stop offset="1" stop-color="#5a5a5a"/></linearGradient><linearGradient id="dot" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c4f56a"/><stop offset="1" stop-color="#7ed321"/></linearGradient></defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="#0a0a0a"/>
+  <svg x="177" y="177" width="670" height="670" viewBox="408 316 530 530"><path d="M413 408L505 484Q523 499 523 522L523 655Q523 705 580 705Q615 705 645 685L725 627L725 715Q725 735 708 750L655 792Q625 815 575 815Q413 815 413 680Z" fill="#f2f2f0"/><path d="M933 345L838 345Q805 345 782 364L660 466L660 510L738 510Q748 510 756 503L808 461Q825 450 825 470L825 702L908 633Q933 612 933 584Z" fill="url(#arrow)"/><circle cx="673" cy="583" r="43" fill="url(#dot)"/></svg>
+</svg>

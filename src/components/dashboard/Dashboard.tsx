@@ -12,6 +12,7 @@ import { HistoryList, UptimeStats } from "./Sidebar";
 import { ActivityPanel, CallCountdown, ModelPill } from "./Console";
 import { OutageButton } from "./OutageButton";
 import { CallingButton } from "./CallingButton";
+import { UplinkMark } from "./UplinkMark";
 import { formatClock, formatDuration, incidentEnd, incidentTitle, isEscalated, isTerminal, probeFor } from "./format";
 import { type Poll, useNow, useStatusPoll } from "./hooks";
 
@@ -36,10 +37,7 @@ function Header({ data, connected, now }: { data: StatusResponse | null; connect
   return (
     <header className="flex items-center justify-between">
       <div className="flex items-center gap-4">
-        <div className="relative grid h-10 w-10 place-items-center">
-          <span className="breathe absolute inset-0 rounded-full border border-accent/60" />
-          <span className="h-3 w-3 rounded-full bg-accent " />
-        </div>
+        <UplinkMark className="h-10 w-10" />
         <div>
           <div className="text-[17px] font-semibold tracking-tight text-white">Uplink</div>
           <div className="text-[13px] text-white/40">

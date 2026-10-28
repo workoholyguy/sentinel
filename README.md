@@ -1,3 +1,5 @@
+<img src="public/brand/uplink-icon.svg" width="88" alt="Uplink logo">
+
 # Uplink
 
 **When your internet dies, Uplink diagnoses it on-device, fixes what it can, and calls your provider for you.**
